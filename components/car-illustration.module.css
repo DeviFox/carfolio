@@ -1,0 +1,84 @@
+/* Scoped styles for CarIllustration. The .iso primitives live in globals.css. */
+
+.wrap {
+  display: block;
+  width: 100%;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  max-height: 320px;
+  user-select: none;
+}
+
+/* Local fills used by poly/ellipse parts (map to anatomy vars) */
+.fillFace { fill: var(--anatomy-face); stroke: none; }
+.fillShade0 { fill: var(--anatomy-shade-0); stroke: none; }
+.fillShade1 { fill: var(--anatomy-shade-1); stroke: none; }
+.fillShade2 { fill: var(--anatomy-shade-2); stroke: none; }
+.fillShade3 { fill: var(--anatomy-shade-3); stroke: none; }
+.fillLitTop { fill: var(--anatomy-lit-top); stroke: none; }
+
+/* ─── Zones ─── */
+.zones { }
+.zones .zone {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
+  transition: fill 140ms ease, stroke 140ms ease;
+  pointer-events: all;
+  /* Needed for annulus zones (e.g. tires = ring with a hole under brakes). */
+  fill-rule: evenodd;
+}
+.zones .zone:focus { outline: none; }
+.zones .zone.zoneHover,
+.zones .zone:hover {
+  fill: color-mix(in srgb, var(--anatomy-lit) 14%, transparent);
+  stroke: color-mix(in srgb, var(--anatomy-lit) 55%, transparent);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.zones .zone.zoneActive {
+  fill: color-mix(in srgb, var(--anatomy-lit) 14%, transparent);
+  stroke: color-mix(in srgb, var(--anatomy-lit) 55%, transparent);
+  stroke-width: 1.3;
+}
+.zones .zone:focus-visible {
+  stroke: var(--anatomy-lit);
+  stroke-width: 1.8;
+  fill: color-mix(in srgb, var(--anatomy-lit) 12%, transparent);
+}
+
+/* ─── Status badges ─── */
+.badges { pointer-events: none; }
+.badgeDot { }
+.badgePulse {
+  fill: currentColor;
+  opacity: 0.26;
+  animation: carpulse 2s ease-in-out infinite;
+}
+@keyframes carpulse {
+  0%, 100% { opacity: 0.26; }
+  50% { opacity: 0.5; }
+}
+.badge-attention { color: #f59e0b; }
+.badge-attention .badgeDot { fill: #f59e0b; }
+.badge-critical { color: #ef4444; }
+.badge-critical .badgeDot { fill: #ef4444; }
+
+/* ─── Hover label ─── */
+.labels { pointer-events: none; }
+.labelBg {
+  fill: var(--anatomy-hi);
+  opacity: 0.92;
+}
+.label {
+  fill: #ffffff;
+  font-family: var(--font-geist-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}

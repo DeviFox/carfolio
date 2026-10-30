@@ -1,0 +1,34 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--r-pill);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--line) 55%, transparent);
+  color: var(--body);
+  white-space: nowrap;
+}
+.sm { font-size: 11px; padding: 2px 8px; gap: 5px; }
+.md { font-size: 12px; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+
+.ok { background: color-mix(in srgb, var(--ok) 12%, var(--card)); color: var(--ok-ink); }
+.ok .dot { background: var(--ok); }
+
+.attention { background: color-mix(in srgb, var(--warn) 18%, var(--card)); color: var(--warn-ink); }
+.attention .dot { background: var(--warn); }
+
+.critical { background: color-mix(in srgb, var(--danger) 14%, var(--card)); color: var(--danger-ink); }
+.critical .dot { background: var(--danger); }
+
+.unknown { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--body); }
+.unknown .dot { background: var(--line-dash); }

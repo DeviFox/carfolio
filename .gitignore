@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+.DS_Store
+*.log
+.env*.local
+next-env.d.ts
+
+.impeccable/config.local.json
+.impeccable/review/
+.impeccable/build/

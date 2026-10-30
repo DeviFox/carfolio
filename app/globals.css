@@ -1,0 +1,181 @@
+:root {
+  /* surfaces */
+  --surface: #f8fafc;
+  --card: #ffffff;
+  --card-raised: #ffffff;
+  --overlay: rgba(15, 23, 42, 0.42);
+
+  /* ink */
+  --ink: #0f172a;
+  --body: #475569;
+  --muted: #64748b;
+  --faint: #94a3b8;
+  --ghost: #cbd5e1;
+
+  /* lines */
+  --line: #e5e7eb;
+  --line-strong: #cbd5e1;
+  --line-dash: #94a3b8;
+
+  /* accent */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --accent-ink: #ffffff;
+
+  /* semantics (reserved for later surfaces) */
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  /* Deep ink tints for text on tinted semantic backgrounds (AA on their
+     --*-15%/card wash). Not accents on neutral surfaces. */
+  --ok-ink: #047857;
+  --warn-ink: #92400e;
+  --danger-ink: #991b1b;
+
+  /* radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 2px 6px rgba(15, 23, 42, 0.06), 0 8px 20px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 2px 6px rgba(15, 23, 42, 0.08), 0 24px 48px rgba(15, 23, 42, 0.18);
+
+  /* type ramp */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 36px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
+a { color: inherit; text-decoration: none; }
+
+::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--ink); }
+
+/* custom scrollbars — browser surface theming */
+* { scrollbar-width: thin; scrollbar-color: var(--ghost) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--ghost); border-radius: var(--r-pill); border: 2px solid var(--surface); }
+*::-webkit-scrollbar-thumb:hover { background: var(--line-dash); }
+
+/* focus-visible: single accent ring, nothing else */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button:focus-visible, a:focus-visible { outline-offset: 3px; }
+
+input:focus-visible, textarea:focus-visible {
+  outline: none;
+}
+
+/* tabular figures for numeric data */
+.mono, code, kbd, samp {
+  font-family: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-feature-settings: "ss01", "tnum", "cv11";
+}
+
+.numeric { font-variant-numeric: tabular-nums; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html, body { overflow-x: hidden; }
+
+/* ───────── Anatomy / iso-kit primitives (scoped to .iso wrapper) ───────── */
+.iso[data-theme="light"] {
+  --anatomy-paper: #ffffff;
+  --anatomy-face: #fbfcfe;
+  --anatomy-top: #ffffff;
+  --anatomy-shade-0: #c7cdd8;
+  --anatomy-shade-1: #d8dde4;
+  --anatomy-shade-2: #e7eaf0;
+  --anatomy-shade-3: #f1f3f6;
+  --anatomy-lit-top: #ffffff;
+  --anatomy-lit-shade: #dbe6ff;
+  --anatomy-hi: #0f172a;
+  --anatomy-mid: #475569;
+  --anatomy-lo: #94a3b8;
+  --anatomy-faint: #cbd5e1;
+  --anatomy-lit: #2563eb;
+  --anatomy-halo: #94a3b8;
+  --anatomy-halo-opacity: 0.28;
+  --anatomy-weight: 0.6px;
+}
+.iso .iso-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.iso .iso-svg path,
+.iso .iso-svg circle,
+.iso .iso-svg ellipse {
+  vector-effect: non-scaling-stroke;
+}
+.iso .iso-fill { fill: var(--anatomy-paper); stroke: none; }
+.iso .iso-shade,
+.iso .iso-top { stroke: none; }
+.iso .iso-shade[data-shade="0"] { fill: var(--anatomy-shade-0); }
+.iso .iso-shade[data-shade="1"] { fill: var(--anatomy-shade-1); }
+.iso .iso-shade[data-shade="2"] { fill: var(--anatomy-shade-2); }
+.iso .iso-shade[data-shade="3"] { fill: var(--anatomy-shade-3); }
+.iso .iso-top { fill: var(--anatomy-top); }
+.iso .iso-solid[data-lit] > .iso-fill { fill: var(--anatomy-face); }
+.iso .iso-solid[data-lit] > .iso-top { fill: var(--anatomy-lit-top); }
+.iso .iso-solid[data-lit] > .iso-shade { fill: var(--anatomy-lit-shade); }
+.iso .iso-solid[data-lit] > .iso-edge { stroke: var(--anatomy-lit); }
+.iso .iso-halo {
+  fill: var(--anatomy-halo);
+  stroke: none;
+  filter: blur(10px);
+  opacity: var(--anatomy-halo-opacity);
+  transform: translateY(4px);
+}
+.iso .iso-line {
+  fill: none;
+  stroke: var(--anatomy-lo);
+  stroke-width: var(--anatomy-weight);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iso .iso-line[data-tone="hi"] { stroke: var(--anatomy-hi); }
+.iso .iso-line[data-tone="mid"] { stroke: var(--anatomy-mid); }
+.iso .iso-line[data-tone="lo"] { stroke: var(--anatomy-lo); }
+.iso .iso-line[data-tone="faint"] { stroke: var(--anatomy-faint); }
+.iso .iso-line[data-tone="lit"] { stroke: var(--anatomy-lit); }
+.iso .iso-dots circle { fill: var(--anatomy-hi); opacity: 0.35; }
