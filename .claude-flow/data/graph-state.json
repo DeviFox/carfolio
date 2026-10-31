@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "updatedAt": 1793256143194,
+  "updatedAt": 1793439675232,
   "nodeCount": 17,
   "nodes": {
     "mem-MEMORY-memory-index-0": {
       "id": "mem-MEMORY-memory-index-0",
       "category": "core",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 0.6050000000000001,
+      "accessCount": 3,
       "createdAt": 1793107774846
     },
     "mem-feedback_language_russian-----0": {
       "id": "mem-feedback_language_russian-----0",
       "category": "feedback_language_russian",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107774846
     },
     "insight-1793107785397-9nwi": {
       "id": "insight-1793107785397-9nwi",
       "category": "insights",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107785397
     },
@@ -28,27 +28,27 @@
       "id": "insight-1793107785397-1hd5",
       "category": "insights",
       "confidence": 1,
-      "accessCount": 28,
+      "accessCount": 42,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-r098": {
       "id": "insight-1793107785397-r098",
       "category": "insights",
       "confidence": 1,
-      "accessCount": 28,
+      "accessCount": 42,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-5wec": {
       "id": "insight-1793107785397-5wec",
       "category": "insights",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-hnpa": {
       "id": "insight-1793107785397-hnpa",
       "category": "insights",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107785397
     },
@@ -69,57 +69,57 @@
     "insight-1793107785397-7f28": {
       "id": "insight-1793107785397-7f28",
       "category": "insights",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-b86a": {
       "id": "insight-1793107785397-b86a",
       "category": "insights",
-      "confidence": 0.5,
+      "confidence": 0.45499999999999996,
       "accessCount": 0,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-gz8u": {
       "id": "insight-1793107785397-gz8u",
       "category": "insights",
-      "confidence": 0.53,
-      "accessCount": 1,
+      "confidence": 0.7100000000000002,
+      "accessCount": 5,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-l2ba": {
       "id": "insight-1793107785397-l2ba",
       "category": "insights",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 1,
+      "accessCount": 12,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-ratl": {
       "id": "insight-1793107785397-ratl",
       "category": "insights",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 1,
+      "accessCount": 12,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-grmc": {
       "id": "insight-1793107785397-grmc",
       "category": "insights",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 1,
+      "accessCount": 15,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-sbd8": {
       "id": "insight-1793107785397-sbd8",
       "category": "insights",
       "confidence": 1,
-      "accessCount": 31,
+      "accessCount": 57,
       "createdAt": 1793107785397
     },
     "insight-1793151926763-jot1": {
       "id": "insight-1793151926763-jot1",
       "category": "insights",
       "confidence": 1,
-      "accessCount": 31,
+      "accessCount": 57,
       "createdAt": 1793151926763
     }
   },

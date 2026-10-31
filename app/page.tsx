@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import AddCarDialog from "@/components/add-car-dialog";
-import AppRail from "@/components/app-rail";
+import AppBar, { VersionTag } from "@/components/app-bar";
 import { ArrowRightIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
 import { formatKm } from "@/lib/compute";
@@ -52,14 +52,14 @@ export default function Page() {
       const g = useGarage.getState();
       if (g.vehicles.length === 0) {
         const v = g.addVehicle({
-          name: "Honda Civic",
-          make: "Honda",
-          model: "Civic",
-          year: 2018,
+          name: "Toyota Corolla",
+          make: "Toyota",
+          model: "Corolla",
+          year: 2009,
           fuelType: "gasoline",
-          engine: "1.6 i-VTEC",
-          bodyType: "sedan",
-          currentMileageKm: 78430,
+          engine: "1.5 1NZ-FE",
+          bodyType: "wagon",
+          currentMileageKm: 178430,
           units: "km",
         });
         const sys = g.addSystem({
@@ -117,7 +117,7 @@ export default function Page() {
             Добавить
           </button>
         </header>
-        <AppRail />
+        <AppBar />
 
         <main className={styles.main}>
           <header className={styles.header}>
@@ -145,7 +145,9 @@ export default function Page() {
               <span className={styles.lvLabel}>Последний просмотр</span>
               <span className={styles.lvName}>{lastViewed.name}</span>
               <span className={styles.lvMileage}>
-                {formatKm(lastViewed.currentMileageKm, lastViewed.units)}
+                {lastViewed.currentMileageKm !== undefined
+                  ? formatKm(lastViewed.currentMileageKm, lastViewed.units)
+                  : "пробег не указан"}
               </span>
               <ArrowRightIcon className={styles.lvChevron} />
             </button>
@@ -198,7 +200,7 @@ export default function Page() {
                                 .join(" · ") || "—"}
                             </div>
                             <div className={`${styles.carMileage} numeric mono`}>
-                              {formatKm(v.currentMileageKm, v.units)}
+                              {v.currentMileageKm !== undefined ? formatKm(v.currentMileageKm, v.units) : "Пробег не указан"}
                             </div>
                           </div>
                           <div className={styles.carCardFooter}>
@@ -243,6 +245,7 @@ export default function Page() {
             данные хранятся только в этом браузере
           </div>
         </main>
+        <VersionTag />
       </div>
 
       <AddCarDialog

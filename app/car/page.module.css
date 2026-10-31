@@ -1,5 +1,5 @@
 .main {
-  padding: 32px 40px 48px;
+  padding: 16px 40px 48px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -156,6 +156,13 @@
 }
 
 .digitGroup { margin-left: 0.22em; }
+
+.mileageMissing {
+  margin-top: 6px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--body);
+}
 
 .mileageAge { margin-top: 6px; font-size: var(--fs-xs); color: var(--muted); }
 .mileageStale { color: var(--warn-ink); font-weight: 500; }

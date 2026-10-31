@@ -22,7 +22,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
 
   const updateMileage = useGarage((s) => s.updateMileage);
 
-  const [mileage, setMileage] = useState(String(vehicle.currentMileageKm));
+  const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
   const [source, setSource] = useState<"owner" | "service">("owner");
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +55,9 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
           <div className={s.titleGroup}>
             <h2 className={s.title} id={titleId}>Обновить пробег</h2>
             <p className={s.subtitle}>
-              Текущий: {formatKm(vehicle.currentMileageKm, vehicle.units)}
+              {vehicle.currentMileageKm !== undefined
+                ? `Текущий: ${formatKm(vehicle.currentMileageKm, vehicle.units)}`
+                : "Пробег ещё не указан."}
             </p>
           </div>
           <button type="button" className={s.close} onClick={onClose} aria-label="Закрыть">

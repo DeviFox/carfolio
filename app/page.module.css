@@ -1,25 +1,22 @@
 .shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-.rail {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  background: var(--card);
-  border-right: 1px solid var(--line);
+/* Desktop: brand and tools sit in the page's top margin, no separate header. */
+.appBar {
   display: flex;
-  flex-direction: column;
-  padding: 20px 14px 20px 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 40px 0;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 6px 24px;
 }
 
 .brandMark {
@@ -42,61 +39,51 @@
   letter-spacing: -0.015em;
 }
 
-.brandSub {
-  display: block;
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  margin-top: 1px;
-}
+.brand .toolBtn { margin-left: 6px; }
 
-.navList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
-  list-style: none;
-}
-
-.navItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+.toolBtn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
   border-radius: var(--r-sm);
   color: var(--body);
-  font-size: var(--fs-base);
-  font-weight: 500;
-  cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease;
 }
+.toolBtn :global(svg) { width: 20px; height: 20px; }
+a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
+.toolCurrent { color: var(--accent); background: var(--accent-soft); }
 
-.navItem:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
-
-.navItem.active {
-  background: var(--accent-soft);
-  color: var(--accent);
+/* Settings exist as a place, not yet as a screen: a small grey gear, tagged "скоро". */
+.settingsSoon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--faint);
+  cursor: default;
 }
-
-.navItem.active :global(svg) { color: var(--accent); }
-
-/* Sections that exist in the nav but are not built yet ("В разработке" on hover). */
-.navItem.soon,
-.navItem.soon:hover { cursor: default; background: transparent; color: var(--faint); }
-.navItem.soon :global(svg) { color: var(--faint); }
-
-.navItem :global(svg) {
-  width: 18px;
-  height: 18px;
+.settingsSoon :global(svg) { width: 16px; height: 16px; }
+.soonBadge {
+  position: absolute;
+  top: -3px;
+  right: -14px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--line);
   color: var(--muted);
-  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
 }
 
-.navSpacer { flex: 1; }
-
-.railFoot {
-  padding: 10px;
+/* Version: quiet, in the page's bottom-right corner. */
+.version {
+  margin-top: auto;
+  align-self: flex-end;
+  padding: 0 40px 16px;
   color: var(--muted);
   font-size: var(--fs-xs);
   font-family: var(--font-geist-mono);
@@ -104,7 +91,7 @@
 }
 
 .main {
-  padding: 32px 40px 48px;
+  padding: 16px 40px 48px;
   display: flex;
   flex-direction: column;
   gap: 40px;
@@ -329,7 +316,8 @@
     overflow-x: hidden;
   }
 
-  .rail { display: none; }
+  .appBar { display: none; }
+  .version { padding: 0 16px 12px; }
 
   .topBar {
     display: flex;

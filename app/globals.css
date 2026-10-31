@@ -118,6 +118,8 @@ input:focus-visible, textarea:focus-visible {
 /* clip, not hidden: hidden turns body into a scroll container and breaks
    position: sticky (rail, car stage). */
 html, body { overflow-x: clip; }
+/* Keep the scrollbar's space when a modal locks scrolling, so the page doesn't jump sideways. */
+html { scrollbar-gutter: stable; }
 
 /* ───────── Anatomy / iso-kit primitives (scoped to .iso wrapper) ───────── */
 .iso[data-theme="light"] {

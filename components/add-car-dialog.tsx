@@ -13,6 +13,7 @@ import styles from "./add-car-dialog.module.css";
 import DeleteCar from "./delete-car";
 import { ArrowRightIcon, CloseIcon } from "./icons";
 import { useGarage } from "@/lib/store";
+import { lockPageScroll } from "@/lib/use-modal";
 import { BODY_TYPE_LABEL, BodyType, Vehicle } from "@/lib/types";
 
 // Body types with a redesigned, non-boxy illustration. The rest still render
@@ -52,7 +53,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
   const [fuel, setFuel] = useState(editVehicle?.fuelType ?? "");
   const [engine, setEngine] = useState(editVehicle?.engine ?? "");
   const [mileage, setMileage] = useState(
-    editVehicle ? String(editVehicle.currentMileageKm) : "",
+    editVehicle?.currentMileageKm !== undefined ? String(editVehicle.currentMileageKm) : "",
   );
   const [units, setUnits] = useState<Units>(editVehicle?.units ?? "km");
   const [bodyType, setBodyType] = useState<BodyType | "">(
@@ -91,7 +92,9 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       setYear(editVehicle.year ? String(editVehicle.year) : "");
       setFuel(editVehicle.fuelType ?? "");
       setEngine(editVehicle.engine ?? "");
-      setMileage(String(editVehicle.currentMileageKm));
+      setMileage(
+        editVehicle.currentMileageKm !== undefined ? String(editVehicle.currentMileageKm) : "",
+      );
       setUnits(editVehicle.units);
       setBodyType(editVehicle.bodyType ?? "");
     }
@@ -108,10 +111,10 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       }
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const unlock = lockPageScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      unlock();
     };
   }, [open]);
 
@@ -128,8 +131,9 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       next.year = `Год должен быть между 1900 и ${CURRENT_YEAR + 1}.`;
     }
     const m = Number(mileage.replace(/\s/g, ""));
+    // Optional on a new car; once known, it can be corrected but not erased.
     if (!mileage.trim()) {
-      next.mileage = "Укажите текущий пробег.";
+      if (editVehicle?.currentMileageKm !== undefined) next.mileage = "Укажите текущий пробег.";
     } else if (!Number.isFinite(m) || m < 0 || m > 10_000_000) {
       next.mileage = "Введите пробег цифрами.";
     }
@@ -152,7 +156,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       fuelType: fuel || undefined,
       engine: engine.trim() || undefined,
       bodyType: (bodyType || undefined) as BodyType | undefined,
-      currentMileageKm: Number(mileage.replace(/\s/g, "")),
+      currentMileageKm: mileage.trim() ? Number(mileage.replace(/\s/g, "")) : undefined,
       units,
     };
     let savedId: string;
@@ -258,7 +262,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                 className={`${styles.input} ${errors.make ? styles.invalid : ""}`}
                 value={make}
                 onChange={(e) => setMake(e.target.value)}
-                placeholder="Honda"
+                placeholder="Toyota"
                 autoComplete="off"
                 aria-invalid={!!errors.make}
                 aria-describedby={errors.make ? "e-make" : undefined}
@@ -279,7 +283,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                 className={`${styles.input} ${errors.model ? styles.invalid : ""}`}
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="Civic"
+                placeholder="Corolla"
                 autoComplete="off"
                 aria-invalid={!!errors.model}
                 aria-describedby={errors.model ? "e-model" : undefined}
@@ -305,7 +309,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                 className={`${styles.input} ${errors.year ? styles.invalid : ""}`}
                 value={year}
                 onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="2018"
+                placeholder="2009"
                 autoComplete="off"
                 aria-invalid={!!errors.year}
                 aria-describedby={errors.year ? "e-year" : undefined}
@@ -370,7 +374,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
               className={styles.input}
               value={engine}
               onChange={(e) => setEngine(e.target.value)}
-              placeholder="например, 1.6 i-VTEC"
+              placeholder="например, 1.5 1NZ-FE"
               autoComplete="off"
             />
           </div>
@@ -394,11 +398,10 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                       .trimStart(),
                   )
                 }
-                placeholder="78 430"
+                placeholder="178 430"
                 autoComplete="off"
                 aria-invalid={!!errors.mileage}
                 aria-describedby={errors.mileage ? "e-mileage" : "h-mileage"}
-                required
               />
               {errors.mileage ? (
                 <span className={styles.error} id="e-mileage">

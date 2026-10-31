@@ -5,7 +5,7 @@ import {useSearchParams, useRouter} from "next/navigation";
 import styles from "./page.module.css";
 import shellStyles from "@/app/page.module.css";
 import CarIllustration from "@/components/car-illustration";
-import AppRail from "@/components/app-rail";
+import AppBar, { VersionTag } from "@/components/app-bar";
 import AttentionList from "@/components/attention-list";
 import ComponentPanel from "@/components/component-panel";
 import EventDialog from "@/components/event-dialog";
@@ -31,7 +31,7 @@ import {
 	sortEventsByDateDesc,
 	type StatusLabel,
 } from "@/lib/compute";
-import type {MaintenanceType, SystemCategory} from "@/lib/types";
+import type {MaintenanceEvent, MaintenanceType, SystemCategory} from "@/lib/types";
 
 export default function CarPageClient() {
 	const searchParams = useSearchParams();
@@ -45,6 +45,7 @@ export default function CarPageClient() {
 		systemId?: string;
 		componentId?: string;
 		type?: MaintenanceType;
+		template?: MaintenanceEvent;
 	} | null>(null);
 	const [openComponentId, setOpenComponentId] = useState<string | null>(null);
 	const [editEventId, setEditEventId]         = useState<string | null>(null);
@@ -224,7 +225,7 @@ export default function CarPageClient() {
 					</button>
 				</header>
 
-				<AppRail onHome={() => router.push("/")}/>
+				<AppBar home/>
 
 				<main className={styles.main}>
 					<header className={styles.heroHead}>
@@ -300,11 +301,17 @@ export default function CarPageClient() {
 								<div className={styles.mileage}>
 									<div>
 										<div className={styles.mileageLabel}>Текущий пробег</div>
-										<div className={`${styles.mileageValue} numeric mono`}>
-											{digitGroups(vehicle.currentMileageKm)}
-											<span className={styles.mileageUnit}>{vehicle.units === "km" ? "км" : "миль"}</span>
-										</div>
-										{mileageAt ? (
+										{vehicle.currentMileageKm !== undefined ? (
+											<div className={`${styles.mileageValue} numeric mono`}>
+												{digitGroups(vehicle.currentMileageKm)}
+												<span className={styles.mileageUnit}>{vehicle.units === "km" ? "км" : "миль"}</span>
+											</div>
+										) : (
+											<div className={styles.mileageMissing}>Не указан</div>
+										)}
+										{vehicle.currentMileageKm === undefined ? (
+											<div className={styles.mileageAge}>Без него ресурс по пробегу не считается.</div>
+										) : mileageAt ? (
 											// Every forecast is measured from this number, so say how fresh it is.
 											<div className={`${styles.mileageAge} ${mileageStale ? styles.mileageStale : ""}`}>
 												Обновлён {formatAgo(mileageAt)}
@@ -316,7 +323,7 @@ export default function CarPageClient() {
 										className={styles.ghostAction}
 										onClick={() => setMileageOpen(true)}
 									>
-										Обновить пробег
+										{vehicle.currentMileageKm === undefined ? "Указать пробег" : "Обновить пробег"}
 									</button>
 								</div>
 								{hasComponents ? (
@@ -356,6 +363,7 @@ export default function CarPageClient() {
 						</div>
 					</div>
 				</main>
+				<VersionTag/>
 			</div>
 
 			<UpdateMileageDialog
@@ -363,6 +371,18 @@ export default function CarPageClient() {
 				onClose={() => setMileageOpen(false)}
 				vehicle={vehicle}
 			/>
+			{/* Stays open under its dialogs, so the history is there to check against. */}
+			{openRow ? (
+				<ComponentPanel
+					row={openRow}
+					vehicle={vehicle}
+					events={vehicleEvents}
+					inspection={latestInspectionFor(openRow.component.id, inspections)}
+					onClose={() => setOpenComponentId(null)}
+					onAddRecord={(type, template) => setRecord({componentId: openRow.component.id, type, template})}
+					onOpenEvent={(e) => setEditEventId(e.id)}
+				/>
+			) : null}
 			{record ? (
 				<AddEventDialog
 					open
@@ -371,21 +391,11 @@ export default function CarPageClient() {
 					defaultSystemId={record.systemId}
 					defaultComponentId={record.componentId}
 					defaultType={record.type}
+					template={record.template}
 				/>
 			) : null}
 			{editEvent ? (
 				<EventDialog event={editEvent} vehicle={vehicle} onClose={() => setEditEventId(null)}/>
-			) : null}
-			{openRow && !record && !editEvent ? (
-				<ComponentPanel
-					row={openRow}
-					vehicle={vehicle}
-					events={vehicleEvents}
-					inspection={latestInspectionFor(openRow.component.id, inspections)}
-					onClose={() => setOpenComponentId(null)}
-					onAddRecord={(type) => setRecord({componentId: openRow.component.id, type})}
-					onOpenEvent={(e) => setEditEventId(e.id)}
-				/>
 			) : null}
 			<AddCarDialog
 				open={editOpen}

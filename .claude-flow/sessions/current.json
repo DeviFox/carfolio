@@ -1,18 +1,12 @@
 {
-  "id": "session-1793256143188",
-  "startedAt": "2026-10-29T06:42:23.188Z",
-  "cwd": "/Users/olegsv/Projects/carfolio",
   "context": {
     "lastMatchedPatterns": [
       "insight-1793151926763-jot1",
-      "insight-1793107785397-sbd8"
+      "mem-MEMORY-memory-index-0",
+      "insight-1793107785397-sbd8",
+      "insight-1793107785397-grmc",
+      "insight-1793107785397-ratl"
     ]
   },
-  "metrics": {
-    "edits": 19,
-    "commands": 0,
-    "tasks": 0,
-    "errors": 0
-  },
-  "updatedAt": "2026-10-30T14:36:02.850Z"
+  "updatedAt": "2026-10-31T11:56:20.773Z"
 }

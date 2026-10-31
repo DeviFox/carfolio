@@ -3,7 +3,7 @@
 import { FormEvent, useId, useMemo, useRef, useState } from "react";
 import s from "./dialog.module.css";
 import { CloseIcon } from "./icons";
-import { useModal } from "@/lib/use-modal";
+import { useConfirmClose, useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
 import {
   findActiveInstalledPart,
@@ -13,30 +13,38 @@ import {
   systemForCategory,
 } from "@/lib/compute";
 import { FLUIDS } from "@/lib/types";
-import type { Condition, InstalledPart, MaintenanceType, Vehicle } from "@/lib/types";
+import type { Condition, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   vehicle: Vehicle;
-  // Opens the form with a new component in this system.
-  defaultSystemId?: string;
-  // Opens the form for this existing component, e.g. from its panel.
-  defaultComponentId?: string;
+  defaultSystemId?: string; // open with a new component in this system
+  defaultComponentId?: string; // open for this existing component, e.g. from its panel
   defaultType?: MaintenanceType;
+  // Previous record to copy cost, currency and notes from; date and mileage stay today's.
+  template?: MaintenanceEvent;
 };
 
 import {
   COMPONENT_LABEL,
   CONDITIONS,
-  CURRENCIES,
+  CostFields,
   type Errors,
   FLUID,
   NEW,
+  NotesField,
   ResourceFields,
   SUBMIT_LABEL,
   TYPES,
+  RepeatSummary,
   digits,
+  errorAttrs,
+  formatLongDate,
+  hasSameDayRecord,
+  lifeOf,
+  minorToText,
+  resourceLine,
   toNumber,
   today,
 } from "./add-event-parts";
@@ -48,23 +56,21 @@ export default function AddEventDialog({
   defaultSystemId,
   defaultComponentId,
   defaultType = "replacement",
+  template,
 }: Props) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const firstFieldRef = useRef<HTMLSelectElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
+  const costRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
-  const { overlayClick, trapTab } = useModal(open, onClose, firstFieldRef);
-
   const systems = useGarage((st) => st.systems);
   const components = useGarage((st) => st.components);
   const installedParts = useGarage((st) => st.installedParts);
+  const events = useGarage((st) => st.events);
   const addRecord = useGarage((st) => st.addRecord);
 
   const vehicleSystems = useMemo(
-    () =>
-      systems
-        .filter((x) => x.vehicleId === vehicle.id && !x.isArchived)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
+    () => systems.filter((x) => x.vehicleId === vehicle.id && !x.isArchived).sort((a, b) => a.sortOrder - b.sortOrder),
     [systems, vehicle.id],
   );
   const vehicleComponents = useMemo(
@@ -79,21 +85,27 @@ export default function AddEventDialog({
   const [name, setName] = useState("");
   const [systemId, setSystemId] = useState(defaultSystemId ?? vehicleSystems[0]?.id ?? "");
   const [date, setDate] = useState(today());
-  const [mileage, setMileage] = useState(String(vehicle.currentMileageKm));
-  const [cost, setCost] = useState("");
-  const [currency, setCurrency] = useState("RUB");
+  const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
+  const templateCost = minorToText(template?.costMinorUnits);
+  const templateNotes = template?.notes ?? "";
+  const [cost, setCost] = useState(templateCost);
+  const [currency, setCurrency] = useState(template?.currency ?? "RUB");
   const [track, setTrack] = useState<boolean | null>(null);
-  const [lifeKm, setLifeKm] = useState(() =>
-    lifeOf(defaultComponentId, installedParts, "expectedLifeKm"),
-  );
-  const [lifeDays, setLifeDays] = useState(() =>
-    lifeOf(defaultComponentId, installedParts, "expectedLifeDays"),
-  );
+  const [lifeKm, setLifeKm] = useState(() => lifeOf(defaultComponentId, installedParts, "expectedLifeKm"));
+  const [lifeDays, setLifeDays] = useState(() => lifeOf(defaultComponentId, installedParts, "expectedLifeDays"));
   const [condition, setCondition] = useState<Condition | "">("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(templateNotes);
+  // Repeat mode hides the settled fields (type, component, resource) until asked.
+  const [expanded, setExpanded] = useState(!template);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const requestClose = useConfirmClose(
+    [type, pick, name, systemId, date, mileage, cost, currency, track, lifeKm, lifeDays, condition, notes],
+    onClose,
+  );
+  // Repeating a job, the price is the one thing to judge, so focus starts there.
+  const { overlayClick, trapTab, stacked } = useModal(open, requestClose, template ? costRef : typeRef);
 
   if (!open) return null;
 
@@ -109,9 +121,7 @@ export default function AddEventDialog({
   const missingFluids =
     isNote || type === "repair" ? [] : FLUIDS.filter((f) => !fluidComponent(f.key));
   const pickedFluid = missingFluids.find((f) => FLUID + f.key === pick);
-  const fluidSystem = pickedFluid
-    ? systemForCategory(vehicleSystems, pickedFluid.category)
-    : undefined;
+  const fluidSystem = pickedFluid ? systemForCategory(vehicleSystems, pickedFluid.category) : undefined;
   const selected = isNew ? undefined : choices.find((c) => c.id === pick);
   const pickValue = selected ? selected.id : isNew || pickedFluid ? pick : "";
   const prevPart = selected ? findActiveInstalledPart(selected.id, installedParts) : undefined;
@@ -122,15 +132,30 @@ export default function AddEventDialog({
   const tracking = type === "replacement" && (track ?? trackAuto);
   const showCost = type === "replacement" || type === "repair" || type === "fluid_service";
   const duplicate = isNew ? findComponentByName(vehicleComponents, name) : undefined;
+  // The template only speaks for the same job on the same component.
+  const repeat = !!template && type === "replacement" && !!selected && selected.id === defaultComponentId;
+  const compact = repeat && !expanded;
+  const costCarried = repeat && templateCost !== "" && cost === templateCost;
+  const notesCarried = repeat && templateNotes.trim() !== "" && notes === templateNotes;
 
   const groups = vehicleSystems
-    .map((sys) => ({
-      sys,
-      items: sortComponentsByName(choices.filter((c) => c.systemId === sys.id)),
-    }))
+    .map((sys) => ({ sys, items: sortComponentsByName(choices.filter((c) => c.systemId === sys.id)) }))
     .filter((g) => g.items.length > 0);
 
+  // Leaving the templated job: values copied from it no longer apply.
+  function leaveTemplate() {
+    if (!template) return;
+    if (cost === templateCost) setCost("");
+    if (notes === templateNotes) setNotes("");
+  }
+
+  function chooseType(value: MaintenanceType) {
+    setType(value);
+    if (value !== "replacement") leaveTemplate();
+  }
+
   function chooseComponent(value: string) {
+    if (value !== defaultComponentId) leaveTemplate();
     setPick(value);
     setTrack(null);
     setErrors((e) => ({ ...e, component: undefined, name: undefined }));
@@ -159,7 +184,7 @@ export default function AddEventDialog({
       const n = toNumber(mileage);
       if (!Number.isFinite(n) || n < 0) {
         e.mileage = "Введите пробег цифрами.";
-      } else if (n > vehicle.currentMileageKm) {
+      } else if (vehicle.currentMileageKm !== undefined && n > vehicle.currentMileageKm) {
         e.mileage = `Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}). Сначала обновите пробег автомобиля.`;
       }
     } else if (!isNote) {
@@ -223,84 +248,98 @@ export default function AddEventDialog({
   }
 
   return (
-    <div className={s.overlay} onClick={overlayClick} role="presentation">
+    <div className={`${s.overlay} ${stacked ? s.stacked : ""}`} onClick={overlayClick} role="presentation">
       <div
         ref={dialogRef}
         className={s.dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={`${titleId}-sub`}
         onKeyDown={(e) => trapTab(e, dialogRef.current)}
       >
         <div className={s.header}>
           <div className={s.titleGroup}>
-            <h2 className={s.title} id={titleId}>Добавить запись</h2>
-            <p className={s.subtitle}>Что сделали с автомобилем?</p>
+            <h2 className={s.title} id={titleId}>
+              {repeat ? `Замена: ${selected?.name}` : "Добавить запись"}
+            </h2>
+            <p className={s.subtitle} id={`${titleId}-sub`}>
+              {repeat && template
+                ? `Прошлая замена — ${formatLongDate(template.date)}`
+                : "Что сделали с автомобилем?"}
+            </p>
           </div>
-          <button type="button" className={s.close} onClick={onClose} aria-label="Закрыть">
+          <button type="button" className={s.close} onClick={requestClose} aria-label="Закрыть">
             <CloseIcon />
           </button>
         </div>
 
         <form className={s.form} onSubmit={onSubmit} noValidate>
-          <div className={s.field}>
-            <label className={s.label} htmlFor="ar-type">Что сделали?</label>
-            <select
-              id="ar-type"
-              ref={firstFieldRef}
-              className={s.select}
-              value={type}
-              onChange={(e) => setType(e.target.value as MaintenanceType)}
-            >
-              {TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </div>
+          {compact ? (
+            <RepeatSummary summary={resourceLine(tracking, lifeKm, lifeDays, vehicle.units)} onEdit={() => setExpanded(true)} />
+          ) : (
+            <>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="ar-type">Что сделали?</label>
+              <select
+                id="ar-type"
+                ref={typeRef}
+                className={s.select}
+                value={type}
+                onChange={(e) => chooseType(e.target.value as MaintenanceType)}
+              >
+                {TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className={s.field}>
-            <label className={s.label} htmlFor="ar-component">
-              {COMPONENT_LABEL[type]}
-              {isNote ? <span className={s.optional}>опционально</span> : null}
-            </label>
-            <select
-              id="ar-component"
-              className={`${s.select} ${errors.component ? s.invalid : ""}`}
-              value={pickValue}
-              onChange={(e) => chooseComponent(e.target.value)}
-            >
-              <option value="">
-                {isNote ? "Без компонента" : isFluid ? "Выберите жидкость" : "Выберите компонент"}
-              </option>
-              {isFluid
-                ? FLUIDS.map((f) => {
-                    const c = fluidComponent(f.key);
-                    return c ? (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ) : (
-                      <option key={f.key} value={FLUID + f.key}>{f.name}</option>
-                    );
-                  })
-                : groups.map((g) => (
-                    <optgroup key={g.sys.id} label={g.sys.name}>
-                      {g.items.map((c) => (
+            <div className={s.field}>
+              <label className={s.label} htmlFor="ar-component">
+                {COMPONENT_LABEL[type]}
+                {isNote ? <span className={s.optional}>опционально</span> : null}
+              </label>
+              <select
+                id="ar-component"
+                className={`${s.select} ${errors.component ? s.invalid : ""}`}
+                {...errorAttrs("ar-component", errors.component)}
+                value={pickValue}
+                onChange={(e) => chooseComponent(e.target.value)}
+              >
+                <option value="">
+                  {isNote ? "Без компонента" : isFluid ? "Выберите жидкость" : "Выберите компонент"}
+                </option>
+                {isFluid
+                  ? FLUIDS.map((f) => {
+                      const c = fluidComponent(f.key);
+                      return c ? (
                         <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-              {!isFluid && missingFluids.length > 0 ? (
-                <optgroup label="Жидкости">
-                  {missingFluids.map((f) => (
-                    <option key={f.key} value={FLUID + f.key}>{f.name}</option>
-                  ))}
-                </optgroup>
-              ) : null}
-              {!isNote && !isFluid && vehicleSystems.length > 0 ? (
-                <option value={NEW}>+ Новый компонент</option>
-              ) : null}
-            </select>
-            {errors.component && <span className={s.error}>{errors.component}</span>}
-          </div>
+                      ) : (
+                        <option key={f.key} value={FLUID + f.key}>{f.name}</option>
+                      );
+                    })
+                  : groups.map((g) => (
+                      <optgroup key={g.sys.id} label={g.sys.name}>
+                        {g.items.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                {!isFluid && missingFluids.length > 0 ? (
+                  <optgroup label="Жидкости">
+                    {missingFluids.map((f) => (
+                      <option key={f.key} value={FLUID + f.key}>{f.name}</option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                {!isNote && !isFluid && vehicleSystems.length > 0 ? (
+                  <option value={NEW}>+ Новый компонент</option>
+                ) : null}
+              </select>
+              {errors.component && <span className={s.error} id="ar-component-error">{errors.component}</span>}
+            </div>
+            </>
+          )}
 
           {isNew ? (
             <div className={s.row}>
@@ -309,12 +348,13 @@ export default function AddEventDialog({
                 <input
                   id="ar-name"
                   className={`${s.input} ${errors.name ? s.invalid : ""}`}
+                  {...errorAttrs("ar-name", errors.name)}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Например, моторное масло"
                   autoComplete="off"
                 />
-                {errors.name && <span className={s.error}>{errors.name}</span>}
+                {errors.name && <span className={s.error} id="ar-name-error">{errors.name}</span>}
                 {duplicate ? (
                   <span className={s.hint}>
                     Уже есть
@@ -337,6 +377,7 @@ export default function AddEventDialog({
                 <select
                   id="ar-system"
                   className={`${s.select} ${errors.system ? s.invalid : ""}`}
+                  {...errorAttrs("ar-system", errors.system)}
                   value={systemId}
                   onChange={(e) => setSystemId(e.target.value)}
                 >
@@ -344,7 +385,7 @@ export default function AddEventDialog({
                     <option key={sys.id} value={sys.id}>{sys.name}</option>
                   ))}
                 </select>
-                {errors.system && <span className={s.error}>{errors.system}</span>}
+                {errors.system && <span className={s.error} id="ar-system-error">{errors.system}</span>}
               </div>
             </div>
           ) : null}
@@ -356,11 +397,16 @@ export default function AddEventDialog({
                 id="ar-date"
                 type="date"
                 className={`${s.input} ${errors.date ? s.invalid : ""}`}
+                {...errorAttrs("ar-date", errors.date)}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 max={today()}
               />
-              {errors.date && <span className={s.error}>{errors.date}</span>}
+              {errors.date ? (
+                <span className={s.error} id="ar-date-error">{errors.date}</span>
+              ) : !isNote && hasSameDayRecord(events, selected?.id, type, date) ? (
+                <span className={s.warning}>Такая запись на эту дату уже есть</span>
+              ) : null}
             </div>
             <div className={s.field}>
               <label className={s.label} htmlFor="ar-mileage">
@@ -373,13 +419,14 @@ export default function AddEventDialog({
                   type="text"
                   inputMode="numeric"
                   className={`${s.input} ${errors.mileage ? s.invalid : ""}`}
+                  {...errorAttrs("ar-mileage", errors.mileage)}
                   value={mileage}
                   onChange={(e) => setMileage(digits(e.target.value))}
                   autoComplete="off"
                 />
                 <span className={s.suffix}>{unit}</span>
               </div>
-              {errors.mileage && <span className={s.error}>{errors.mileage}</span>}
+              {errors.mileage && <span className={s.error} id="ar-mileage-error">{errors.mileage}</span>}
             </div>
           </div>
 
@@ -402,41 +449,18 @@ export default function AddEventDialog({
           ) : null}
 
           {showCost ? (
-            <div className={s.row}>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="ar-cost">
-                  Стоимость <span className={s.optional}>опционально</span>
-                </label>
-                <input
-                  id="ar-cost"
-                  type="text"
-                  inputMode="decimal"
-                  className={`${s.input} ${errors.cost ? s.invalid : ""}`}
-                  value={cost}
-                  onChange={(e) =>
-                    setCost(e.target.value.replace(/[^\d\s,.]/g, "").replace(/\s+/g, " "))
-                  }
-                  autoComplete="off"
-                />
-                {errors.cost && <span className={s.error}>{errors.cost}</span>}
-              </div>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="ar-cur">Валюта</label>
-                <select
-                  id="ar-cur"
-                  className={s.select}
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <CostFields
+              inputRef={costRef}
+              cost={cost}
+              currency={currency}
+              onCostChange={setCost}
+              onCurrencyChange={setCurrency}
+              carried={costCarried}
+              error={errors.cost}
+            />
           ) : null}
 
-          {type === "replacement" ? (
+          {type === "replacement" && !compact ? (
             <ResourceFields
               tracking={tracking}
               onTrackingChange={setTrack}
@@ -449,25 +473,18 @@ export default function AddEventDialog({
             />
           ) : null}
 
-          <div className={s.field}>
-            <label className={s.label} htmlFor="ar-notes">
-              {isNote ? "Текст заметки" : "Заметка"}
-              {isNote ? null : <span className={s.optional}>опционально</span>}
-            </label>
-            <textarea
-              id="ar-notes"
-              className={`${s.textarea} ${errors.notes ? s.invalid : ""}`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={isNote ? undefined : "Марка, артикул или другие подробности"}
-            />
-            {errors.notes && <span className={s.error}>{errors.notes}</span>}
-          </div>
+          <NotesField
+            isNote={isNote}
+            value={notes}
+            onChange={setNotes}
+            carried={notesCarried}
+            error={errors.notes}
+          />
 
           {formError && <span className={s.error} role="alert">{formError}</span>}
 
           <div className={s.footer}>
-            <button type="button" className={s.ghostBtn} onClick={onClose}>
+            <button type="button" className={s.ghostBtn} onClick={requestClose}>
               Отмена
             </button>
             <button type="submit" className={s.primary} disabled={submitting}>
@@ -478,13 +495,4 @@ export default function AddEventDialog({
       </div>
     </div>
   );
-}
-
-function lifeOf(
-  componentId: string | undefined,
-  parts: InstalledPart[],
-  key: "expectedLifeKm" | "expectedLifeDays",
-): string {
-  const value = componentId ? findActiveInstalledPart(componentId, parts)?.[key] : undefined;
-  return value ? String(value) : "";
 }

@@ -63,7 +63,8 @@ export interface Vehicle {
   fuelType?: string;
   engine?: string;
   bodyType?: BodyType;
-  currentMileageKm: number;
+  // Unknown until the owner enters it; resource by mileage waits for it.
+  currentMileageKm?: number;
   units: Units;
   createdAt: string;
   updatedAt: string;

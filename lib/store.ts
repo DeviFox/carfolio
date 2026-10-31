@@ -97,16 +97,14 @@ export const useGarage = create<GarageState>()(
           createdAt: now(),
           updatedAt: now(),
         };
-        const mileageEntry: MileageEntry = {
-          id: uid(),
-          vehicleId: vehicle.id,
-          mileageKm: vehicle.currentMileageKm,
-          date: now(),
-          source: "owner",
-        };
+        // No reading yet means no history entry: unknown is not zero.
+        const mileageEntries: MileageEntry[] =
+          vehicle.currentMileageKm !== undefined
+            ? [{ id: uid(), vehicleId: vehicle.id, mileageKm: vehicle.currentMileageKm, date: now(), source: "owner" }]
+            : [];
         set((s) => ({
           vehicles: [...s.vehicles, vehicle],
-          mileageHistory: [...s.mileageHistory, mileageEntry],
+          mileageHistory: [...s.mileageHistory, ...mileageEntries],
           lastViewedVehicleId: vehicle.id,
         }));
         return vehicle;
@@ -270,7 +268,7 @@ export const useGarage = create<GarageState>()(
           return fail("Введите пробег цифрами.");
         }
         if (event.type !== "observation" && mileage === undefined) return fail("Укажите пробег.");
-        if (mileage !== undefined && mileage > vehicle.currentMileageKm) {
+        if (mileage !== undefined && vehicle.currentMileageKm !== undefined && mileage > vehicle.currentMileageKm) {
           return fail(`Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}).`);
         }
         const notes = patch.notes?.trim() || undefined;

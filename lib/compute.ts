@@ -11,7 +11,7 @@ import type {
 } from "./types";
 
 export type ResourceSignal =
-  | { kind: "unknown"; reason: "no_install_mileage" | "no_expected_life" | "no_part" }
+  | { kind: "unknown"; reason: "no_install_mileage" | "no_expected_life" | "no_part" | "no_current_mileage" }
   | {
       kind: "known";
       ratio: number;
@@ -32,14 +32,17 @@ export function computeResource(
 ): ResourceSignal {
   if (!part) return { kind: "unknown", reason: "no_part" };
 
-  const haveKm =
+  const partHasKm =
     typeof part.installedAtMileageKm === "number" &&
     typeof part.expectedLifeKm === "number";
+  // Mileage-based life needs the car's current mileage too.
+  const haveKm = partHasKm && typeof vehicle.currentMileageKm === "number";
   const haveDays =
     typeof part.installedAtDate === "string" &&
     typeof part.expectedLifeDays === "number";
 
   if (!haveKm && !haveDays) {
+    if (partHasKm) return { kind: "unknown", reason: "no_current_mileage" };
     return {
       kind: "unknown",
       reason: !part.installedAtMileageKm && !part.installedAtDate
@@ -59,7 +62,7 @@ export function computeResource(
   if (haveKm) {
     const Minstall = part.installedAtMileageKm!;
     const L = part.expectedLifeKm!;
-    const Mnow = vehicle.currentMileageKm;
+    const Mnow = vehicle.currentMileageKm!;
     const driven = Math.max(0, Mnow - Minstall);
     drivenKm = driven;
     const r = Math.max(0, 1 - driven / L);
@@ -291,13 +294,13 @@ export function sortComponentsByName(components: Component[]): Component[] {
 
 export function assertNewerMileage(
   nextMileageKm: number,
-  lastConfirmedMileageKm: number,
+  lastConfirmedMileageKm: number | undefined,
   units: Vehicle["units"] = "km",
 ): string | null {
   if (!Number.isFinite(nextMileageKm) || nextMileageKm < 0) {
     return "Введите пробег цифрами.";
   }
-  if (nextMileageKm < lastConfirmedMileageKm) {
+  if (lastConfirmedMileageKm !== undefined && nextMileageKm < lastConfirmedMileageKm) {
     return `Новый пробег меньше текущего (${formatKm(lastConfirmedMileageKm, units)}). Пробег не может уменьшаться.`;
   }
   return null;

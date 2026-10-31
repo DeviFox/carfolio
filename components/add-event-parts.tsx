@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 import s from "./dialog.module.css";
-import type { Condition, MaintenanceType } from "@/lib/types";
+import { findActiveInstalledPart, formatDuration, formatKm } from "@/lib/compute";
+import type { Condition, InstalledPart, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Field = "component" | "name" | "system" | "date" | "mileage" | "cost" | "lifeKm" | "lifeDays" | "notes";
 export type Errors = Partial<Record<Field, string>>;
@@ -44,7 +45,57 @@ export const FLUID = "__fluid:";
 
 export const digits = (v: string) => v.replace(/[^\d\s]/g, "").replace(/\s+/g, " ");
 export const toNumber = (v: string) => Number(v.replace(/\s/g, "").replace(",", "."));
-export const today = () => new Date().toISOString().slice(0, 10);
+// Ties a field to its error message for assistive tech: the error span carries `${id}-error`.
+export const errorAttrs = (id: string, error?: string) =>
+  error ? { "aria-invalid": true as const, "aria-describedby": `${id}-error` } : {};
+
+// 845000 → "8450", 150050 → "1500,5": money as the owner types it.
+export const minorToText = (minor?: number) =>
+  minor !== undefined ? String(minor / 100).replace(".", ",") : "";
+
+// Local calendar date: toISOString() is UTC and gives yesterday after local midnight east of Greenwich.
+export const today = () => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+// The same kind of record for this component on this date: likely a double entry.
+export function hasSameDayRecord(
+  events: MaintenanceEvent[],
+  componentId: string | undefined,
+  type: MaintenanceType,
+  date: string,
+): boolean {
+  return (
+    !!componentId &&
+    events.some((e) => e.type === type && e.date.slice(0, 10) === date && e.componentIds.includes(componentId))
+  );
+}
+
+// "15 ноября 2025": read as a local calendar date, no trailing "г." to collide with punctuation.
+export function formatLongDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return `${date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} ${y}`;
+}
+
+// Repeat mode: what carries over unchanged, collapsed to one line the owner can reopen.
+export function RepeatSummary({ summary, onEdit }: { summary: string; onEdit: () => void }) {
+  return (
+    <div className={s.repeatSummary}>
+      <span className={s.repeatText}>{summary}</span>
+      <button
+        type="button"
+        className={s.linkBtn}
+        onClick={onEdit}
+        aria-label="Изменить тип, компонент и ресурс"
+      >
+        Изменить
+      </button>
+    </div>
+  );
+}
 
 const TIME_UNITS = [
   { value: "d", label: "дн.", days: 1 },
@@ -101,6 +152,8 @@ export function DaysInput({
         inputMode="numeric"
         autoComplete="off"
         className={`${s.input} ${invalid ? s.invalid : ""}`}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? `${id}-error` : undefined}
         value={amount}
         onChange={(e) => {
           const next = e.target.value.replace(/[^\d]/g, "");
@@ -171,13 +224,14 @@ export function ResourceFields({
                   type="text"
                   inputMode="numeric"
                   className={`${s.input} ${errors.lifeKm ? s.invalid : ""}`}
+                  {...errorAttrs("ar-life-km", errors.lifeKm)}
                   value={lifeKm}
                   onChange={(e) => onLifeKmChange(digits(e.target.value))}
                   autoComplete="off"
                 />
                 <span className={s.suffix}>{unit}</span>
               </div>
-              {errors.lifeKm && <span className={s.error}>{errors.lifeKm}</span>}
+              {errors.lifeKm && <span className={s.error} id="ar-life-km-error">{errors.lifeKm}</span>}
             </div>
             <div className={s.field}>
               <label className={s.label} htmlFor="ar-life-days">Ресурс по времени</label>
@@ -187,7 +241,7 @@ export function ResourceFields({
                 onChange={onLifeDaysChange}
                 invalid={Boolean(errors.lifeDays)}
               />
-              {errors.lifeDays && <span className={s.error}>{errors.lifeDays}</span>}
+              {errors.lifeDays && <span className={s.error} id="ar-life-days-error">{errors.lifeDays}</span>}
             </div>
           </div>
           {!lifeKm.trim() && !lifeDays.trim() ? (
@@ -197,4 +251,125 @@ export function ResourceFields({
       ) : null}
     </>
   );
+}
+
+type CostProps = {
+  inputRef?: RefObject<HTMLInputElement | null>;
+  cost: string;
+  currency: string;
+  onCostChange: (v: string) => void;
+  onCurrencyChange: (v: string) => void;
+  // The value was copied from a previous record and not touched yet.
+  carried?: boolean;
+  error?: string;
+};
+
+export function CostFields({
+  inputRef,
+  cost,
+  currency,
+  onCostChange,
+  onCurrencyChange,
+  carried,
+  error,
+}: CostProps) {
+  return (
+    <div className={s.row}>
+      <div className={s.field}>
+        <label className={s.label} htmlFor="ar-cost">
+          Стоимость <span className={s.optional}>опционально</span>
+        </label>
+        <input
+          id="ar-cost"
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          className={`${s.input} ${error ? s.invalid : ""} ${carried ? s.carried : ""}`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "ar-cost-error" : carried ? "ar-cost-carried" : undefined}
+          value={cost}
+          onChange={(e) => onCostChange(e.target.value.replace(/[^\d\s,.]/g, "").replace(/\s+/g, " "))}
+        />
+        {error ? (
+          <span className={s.error} id="ar-cost-error">{error}</span>
+        ) : carried ? (
+          <span className={s.carriedHint} id="ar-cost-carried">* Цену взяли от прошлой замены</span>
+        ) : null}
+      </div>
+      <div className={s.field}>
+        <label className={s.label} htmlFor="ar-cur">Валюта</label>
+        <select
+          id="ar-cur"
+          className={s.select}
+          value={currency}
+          onChange={(e) => onCurrencyChange(e.target.value)}
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+type NotesProps = {
+  isNote: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  carried?: boolean;
+  error?: string;
+};
+
+export function NotesField({ isNote, value, onChange, carried, error }: NotesProps) {
+  return (
+    <div className={s.field}>
+      <label className={s.label} htmlFor="ar-notes">
+        {isNote ? "Текст заметки" : "Заметка"}
+        {isNote ? null : <span className={s.optional}>опционально</span>}
+      </label>
+      <textarea
+        id="ar-notes"
+        className={`${s.textarea} ${error ? s.invalid : ""} ${carried ? s.carried : ""}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? "ar-notes-error" : carried ? "ar-notes-carried" : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={isNote ? undefined : "Марка, артикул или другие подробности"}
+      />
+      {error ? (
+        <span className={s.error} id="ar-notes-error">{error}</span>
+      ) : carried ? (
+        <span className={s.carriedHint} id="ar-notes-carried">
+          * Заметку взяли от прошлой замены
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+// The active part's life, as the starting value for its replacement.
+export function lifeOf(
+  componentId: string | undefined,
+  parts: InstalledPart[],
+  key: "expectedLifeKm" | "expectedLifeDays",
+): string {
+  const value = componentId ? findActiveInstalledPart(componentId, parts)?.[key] : undefined;
+  return value ? String(value) : "";
+}
+
+// Repeat-mode summary of the resource the new part inherits.
+export function resourceLine(
+  tracking: boolean,
+  lifeKm: string,
+  lifeDays: string,
+  units: Vehicle["units"],
+): string {
+  if (!tracking) return "Ресурс не отслеживается";
+  const parts = [
+    lifeKm.trim() ? formatKm(toNumber(lifeKm), units) : null,
+    lifeDays.trim() ? formatDuration(toNumber(lifeDays)) : null,
+  ].filter(Boolean);
+  return parts.length ? `Ресурс как у прошлой детали: ${parts.join(" · ")}` : "Ресурс не задан";
 }

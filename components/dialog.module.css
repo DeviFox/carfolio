@@ -9,6 +9,16 @@
   animation: overlayIn 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 @keyframes overlayIn { from { opacity: 0 } to { opacity: 1 } }
+/* Over the component sheet the page is already dimmed; a second scrim would
+   bury the history the owner is checking against. Phones keep it: there the
+   dialog covers the sheet anyway. */
+@media (min-width: 561px) {
+  .overlay.stacked { background: transparent; }
+}
+/* Wide enough to sit beside the 440px sheet: centre in the space left of it. */
+@media (min-width: 1040px) {
+  .overlay.stacked { padding-right: calc(440px + 24px); }
+}
 
 .dialog {
   width: 100%;
@@ -85,7 +95,7 @@
 .required { color: var(--danger); font-weight: 600; }
 .optional {
   font-size: var(--fs-xs);
-  color: var(--faint);
+  color: var(--muted);
   font-weight: 500;
   letter-spacing: 0.01em;
 }
@@ -106,7 +116,7 @@
 .input, .select { height: 42px; }
 .textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 
-.input::placeholder, .textarea::placeholder { color: var(--faint); }
+.input::placeholder, .textarea::placeholder { color: var(--muted); }
 
 .input:focus, .select:focus, .textarea:focus {
   border-color: var(--accent);
@@ -146,7 +156,29 @@
 .unitInput { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 6px; }
 
 .hint { font-size: var(--fs-xs); color: var(--muted); line-height: 1.4; }
+
+/* Value copied from a previous record and not yet touched: a faint accent wash
+   marks it as "check me" until the owner edits it. */
+.input.carried, .textarea.carried {
+  background: color-mix(in srgb, var(--accent) 5%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line-strong));
+}
+.carriedHint { font-size: var(--fs-xs); color: var(--accent); line-height: 1.4; font-weight: 500; }
+
+.repeatSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--line) 45%, transparent);
+  font-size: var(--fs-sm);
+}
+.repeatText { color: var(--body); font-variant-numeric: tabular-nums; }
 .error { font-size: var(--fs-xs); color: var(--danger); font-weight: 500; }
+/* Not an error: the save goes through, the owner is just asked to look twice. */
+.warning { font-size: var(--fs-xs); color: var(--warn-ink); font-weight: 500; line-height: 1.4; }
 
 .check {
   display: inline-flex;
@@ -264,7 +296,7 @@
   font-weight: 600;
   font-size: var(--fs-base);
   border-radius: var(--r-sm);
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 18%, transparent);
   transition: background-color 120ms ease, transform 120ms ease;
   letter-spacing: -0.005em;
 }
@@ -338,4 +370,9 @@
   .title { font-size: var(--fs-md); }
   .footer { padding-top: 16px; }
   .primary { padding: 10px 14px; }
+}
+
+/* Reduced motion: dialogs still fade in, so arrival reads, but don't travel or scale. */
+@media (prefers-reduced-motion: reduce) {
+  .dialog { animation-name: overlayIn; }
 }

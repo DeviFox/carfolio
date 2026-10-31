@@ -20,7 +20,10 @@ export function GarageIcon(p: Props) {
     <svg {...base} {...p}>
       <path d="M3 10.5 12 4l9 6.5" />
       <path d="M5 10v9h14v-9" />
-      <path d="M8 19v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5" />
+      {/* Sectional garage door: a square opening with horizontal panels. */}
+      <path d="M8 19v-8h8v8" />
+      {/* Thinner panel lines, so they stay apart at 20px instead of filling the door. */}
+      <path d="M8 13.7h8M8 16.3h8" strokeWidth={1.2} />
     </svg>
   );
 }
