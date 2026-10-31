@@ -5,13 +5,10 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import {
   Component,
   ComponentInspection,
-  ComponentKind,
-  Condition,
   GarageData,
   ID,
   InstalledPart,
   MaintenanceEvent,
-  MaintenanceType,
   MileageEntry,
   SCHEMA_VERSION,
   FLUIDS,
@@ -19,7 +16,16 @@ import {
   VehicleSystem,
   emptyGarage,
 } from "./types";
-import { findActiveInstalledPart, findComponentByName } from "./compute";
+import { findActiveInstalledPart, findComponentByName, formatKm } from "./compute";
+import {
+  type AddRecordInput,
+  type AddRecordResult,
+  type EventPatch,
+  kindForNewComponent,
+  retiredBy,
+} from "./records";
+
+export type { AddRecordInput, AddRecordResult, EventPatch };
 
 const uid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -36,41 +42,6 @@ type AddInstalledPartInput = Omit<InstalledPart, "id">;
 
 type AddEventInput = Omit<MaintenanceEvent, "id">;
 
-type AddInspectionInput = Omit<ComponentInspection, "id">;
-
-export interface AddRecordInput {
-  vehicleId: ID;
-  type: MaintenanceType;
-  date: string;
-  mileageKm?: number;
-  componentId?: ID;
-  // fluid: FluidSpec key when the component comes from the fluid catalog.
-  newComponent?: { name: string; systemId: ID; fluid?: string };
-  costMinorUnits?: number;
-  currency?: string;
-  notes?: string;
-  // Only for replacement; undefined means the new part is not tracked.
-  resource?: { expectedLifeKm?: number; expectedLifeDays?: number };
-  // Only for inspection; saved as a ComponentInspection.
-  condition?: Condition;
-}
-
-export type AddRecordResult =
-  | { ok: true; event: MaintenanceEvent }
-  | { ok: false; error: string };
-
-function kindForNewComponent(type: MaintenanceType, tracked: boolean): ComponentKind {
-  switch (type) {
-    case "replacement":
-      return tracked ? "consumable" : "replaceable";
-    case "inspection":
-      return "inspectable";
-    case "fluid_service":
-      return "consumable";
-    default:
-      return "replaceable";
-  }
-}
 
 interface GarageState extends GarageData {
   addVehicle: (input: AddVehicleInput) => Vehicle;
@@ -90,12 +61,17 @@ interface GarageState extends GarageData {
   archiveComponent: (id: ID) => void;
 
   addInstalledPart: (input: AddInstalledPartInput) => InstalledPart;
-  retireInstalledPart: (id: ID, atMileageKm?: number, atDate?: string) => void;
+
+  updateInstalledPart: (
+    id: ID,
+    patch: Partial<Pick<InstalledPart, "expectedLifeKm" | "expectedLifeDays">>,
+  ) => void;
 
   addEvent: (input: AddEventInput) => MaintenanceEvent;
+  // Removes a record and undoes what it did: a replacement's part goes away and
+  // the part it retired becomes active again; an inspection's result goes too.
   deleteEvent: (id: ID) => void;
-
-  addInspection: (input: AddInspectionInput) => ComponentInspection;
+  updateEvent: (id: ID, patch: EventPatch) => AddRecordResult;
 
   addRecord: (input: AddRecordInput) => AddRecordResult;
 
@@ -229,17 +205,10 @@ export const useGarage = create<GarageState>()(
         return part;
       },
 
-      retireInstalledPart: (id, atMileageKm, atDate) => {
+
+      updateInstalledPart: (id, patch) => {
         set((s) => ({
-          installedParts: s.installedParts.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  removedAtMileageKm: atMileageKm,
-                  removedAtDate: atDate ?? now(),
-                }
-              : p,
-          ),
+          installedParts: s.installedParts.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
       },
 
@@ -250,24 +219,120 @@ export const useGarage = create<GarageState>()(
       },
 
       deleteEvent: (id) => {
-        set((s) => ({ events: s.events.filter((e) => e.id !== id) }));
+        set((s) => {
+          const event = s.events.find((e) => e.id === id);
+          if (!event) return {};
+          let installedParts = s.installedParts;
+          const part = event.installedPartId
+            ? s.installedParts.find((p) => p.id === event.installedPartId)
+            : undefined;
+          if (part) {
+            installedParts = installedParts.filter((p) => p.id !== part.id);
+            const wasActive = !part.removedAtDate && part.removedAtMileageKm === undefined;
+            const previous = wasActive ? retiredBy(part, installedParts) : undefined;
+            if (previous) {
+              installedParts = installedParts.map((p) =>
+                p.id === previous.id
+                  ? { ...p, removedAtDate: undefined, removedAtMileageKm: undefined }
+                  : p,
+              );
+            }
+          }
+          const inspections =
+            event.type === "inspection"
+              ? s.inspections.filter(
+                  (i) =>
+                    !(
+                      event.componentIds.includes(i.componentId) &&
+                      i.date === event.date &&
+                      i.mileageKm === event.mileageKm
+                    ),
+                )
+              : s.inspections;
+          return {
+            events: s.events.filter((e) => e.id !== id),
+            installedParts,
+            inspections,
+          };
+        });
       },
 
-      addInspection: (input) => {
-        const inspection: ComponentInspection = { ...input, id: uid() };
-        set((s) => ({ inspections: [...s.inspections, inspection] }));
-        return inspection;
+      updateEvent: (id, patch) => {
+        const fail = (error: string): AddRecordResult => ({ ok: false, error });
+        const st = get();
+        const event = st.events.find((e) => e.id === id);
+        if (!event) return fail("Запись не найдена.");
+        const vehicle = st.vehicles.find((v) => v.id === event.vehicleId);
+        if (!vehicle) return fail("Автомобиль не найден.");
+        if (!patch.date) return fail("Укажите дату.");
+        const mileage = patch.mileageKm;
+        if (mileage !== undefined && (!Number.isFinite(mileage) || mileage < 0)) {
+          return fail("Введите пробег цифрами.");
+        }
+        if (event.type !== "observation" && mileage === undefined) return fail("Укажите пробег.");
+        if (mileage !== undefined && mileage > vehicle.currentMileageKm) {
+          return fail(`Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}).`);
+        }
+        const notes = patch.notes?.trim() || undefined;
+        if (event.type === "observation" && !notes) return fail("Напишите текст заметки.");
+
+        const part = event.installedPartId
+          ? st.installedParts.find((p) => p.id === event.installedPartId)
+          : undefined;
+        const previous = part ? retiredBy(part, st.installedParts) : undefined;
+        if (
+          previous?.installedAtMileageKm !== undefined &&
+          mileage !== undefined &&
+          mileage < previous.installedAtMileageKm
+        ) {
+          return fail(
+            `Пробег меньше, чем при прошлой замене (${formatKm(previous.installedAtMileageKm, vehicle.units)}).`,
+          );
+        }
+
+        const next: MaintenanceEvent = {
+          ...event,
+          date: patch.date,
+          mileageKm: mileage,
+          costMinorUnits: patch.costMinorUnits,
+          currency: patch.costMinorUnits !== undefined ? patch.currency : undefined,
+          notes,
+        };
+        // The record and the installation it created describe one moment; keep them in step.
+        set((s) => ({
+          events: s.events.map((e) => (e.id === id ? next : e)),
+          installedParts: s.installedParts.map((p) => {
+            if (part && p.id === part.id) {
+              return { ...p, installedAtDate: next.date, installedAtMileageKm: mileage, notes };
+            }
+            if (previous && p.id === previous.id) {
+              return { ...p, removedAtDate: next.date, removedAtMileageKm: mileage };
+            }
+            return p;
+          }),
+          inspections:
+            event.type === "inspection"
+              ? s.inspections.map((i) =>
+                  event.componentIds.includes(i.componentId) &&
+                  i.date === event.date &&
+                  i.mileageKm === event.mileageKm
+                    ? { ...i, date: next.date, mileageKm: mileage, notes }
+                    : i,
+                )
+              : s.inspections,
+        }));
+        return { ok: true, event: next };
       },
 
       addRecord: (input) => {
         const fail = (error: string): AddRecordResult => ({ ok: false, error });
         const st = get();
         const vehicle = st.vehicles.find((v) => v.id === input.vehicleId);
-        if (!vehicle) return fail("Машина не найдена.");
+        if (!vehicle) return fail("Автомобиль не найден.");
         if (!input.date) return fail("Укажите дату.");
         const mileage = input.mileageKm;
         if (mileage !== undefined && (!Number.isFinite(mileage) || mileage < 0)) {
-          return fail("Пробег должен быть неотрицательным числом.");
+          return fail("Введите пробег цифрами.");
         }
         if (input.type !== "observation" && mileage === undefined) {
           return fail("Укажите пробег.");
@@ -298,7 +363,7 @@ export const useGarage = create<GarageState>()(
           if (fluid !== undefined) {
             if (!FLUIDS.some((f) => f.key === fluid)) return fail("Неизвестная жидкость.");
             if (vehicleComponents.some((c) => c.fluid === fluid && !c.isArchived)) {
-              return fail("Эта жидкость уже есть у машины.");
+              return fail("Эта жидкость уже есть у автомобиля.");
             }
           }
           created = {
@@ -330,7 +395,7 @@ export const useGarage = create<GarageState>()(
             mileage < prevPart.installedAtMileageKm
           ) {
             return fail(
-              `Пробег ниже пробега предыдущей установки (${prevPart.installedAtMileageKm.toLocaleString("ru-RU")}).`,
+              `Пробег меньше, чем при прошлой замене (${formatKm(prevPart.installedAtMileageKm, vehicle.units)}). Проверьте значение.`,
             );
           }
           newPart = {

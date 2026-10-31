@@ -31,7 +31,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const n = Number(mileage.replace(/\s/g, ""));
-    const err = assertNewerMileage(n, vehicle.currentMileageKm);
+    const err = assertNewerMileage(n, vehicle.currentMileageKm, vehicle.units);
     if (err) {
       setError(err);
       return;

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import s from "./dialog.module.css";
 import type { Condition, MaintenanceType } from "@/lib/types";
 
@@ -44,6 +45,86 @@ export const FLUID = "__fluid:";
 export const digits = (v: string) => v.replace(/[^\d\s]/g, "").replace(/\s+/g, " ");
 export const toNumber = (v: string) => Number(v.replace(/\s/g, "").replace(",", "."));
 export const today = () => new Date().toISOString().slice(0, 10);
+
+const TIME_UNITS = [
+  { value: "d", label: "дн.", days: 1 },
+  { value: "m", label: "мес.", days: 30 },
+  { value: "y", label: "лет", days: 365 },
+] as const;
+type TimeUnit = (typeof TIME_UNITS)[number]["value"];
+
+function splitDays(days: string): { amount: string; unit: TimeUnit } {
+  const n = Number(days);
+  if (!days || !(n > 0)) return { amount: "", unit: "m" };
+  if (n % 365 === 0) return { amount: String(n / 365), unit: "y" };
+  if (n % 30 === 0) return { amount: String(n / 30), unit: "m" };
+  return { amount: days, unit: "d" };
+}
+
+// Life by time in the unit people think in (months, years); stored as days.
+export function DaysInput({
+  id,
+  value,
+  onChange,
+  invalid,
+}: {
+  id: string;
+  value: string;
+  onChange: (days: string) => void;
+  invalid?: boolean;
+}) {
+  const [amount, setAmount] = useState(() => splitDays(value).amount);
+  const [unit, setUnit] = useState<TimeUnit>(() => splitDays(value).unit);
+  const factor = TIME_UNITS.find((u) => u.value === unit)!.days;
+
+  // Follow outside changes (e.g. a component's previous life prefilled).
+  useEffect(() => {
+    const own = amount ? String(Number(amount) * factor) : "";
+    if (value !== own) {
+      const next = splitDays(value);
+      setAmount(next.amount);
+      setUnit(next.unit);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  function emit(nextAmount: string, nextUnit: TimeUnit) {
+    const f = TIME_UNITS.find((u) => u.value === nextUnit)!.days;
+    onChange(nextAmount ? String(Number(nextAmount) * f) : "");
+  }
+
+  return (
+    <div className={s.unitInput}>
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        className={`${s.input} ${invalid ? s.invalid : ""}`}
+        value={amount}
+        onChange={(e) => {
+          const next = e.target.value.replace(/[^\d]/g, "");
+          setAmount(next);
+          emit(next, unit);
+        }}
+      />
+      <select
+        className={s.select}
+        aria-label="Единица времени"
+        value={unit}
+        onChange={(e) => {
+          const next = e.target.value as TimeUnit;
+          setUnit(next);
+          emit(amount, next);
+        }}
+      >
+        {TIME_UNITS.map((u) => (
+          <option key={u.value} value={u.value}>{u.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 type ResourceProps = {
   tracking: boolean;
@@ -100,18 +181,12 @@ export function ResourceFields({
             </div>
             <div className={s.field}>
               <label className={s.label} htmlFor="ar-life-days">Ресурс по времени</label>
-              <div className={s.suffixInput}>
-                <input
-                  id="ar-life-days"
-                  type="text"
-                  inputMode="numeric"
-                  className={`${s.input} ${errors.lifeDays ? s.invalid : ""}`}
-                  value={lifeDays}
-                  onChange={(e) => onLifeDaysChange(e.target.value.replace(/[^\d]/g, ""))}
-                  autoComplete="off"
-                />
-                <span className={s.suffix}>дн.</span>
-              </div>
+              <DaysInput
+                id="ar-life-days"
+                value={lifeDays}
+                onChange={onLifeDaysChange}
+                invalid={Boolean(errors.lifeDays)}
+              />
               {errors.lifeDays && <span className={s.error}>{errors.lifeDays}</span>}
             </div>
           </div>

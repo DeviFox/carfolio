@@ -10,7 +10,8 @@ import {
   useState,
 } from "react";
 import styles from "./add-car-dialog.module.css";
-import { ArrowRightIcon, CheckIcon, CloseIcon } from "./icons";
+import DeleteCar from "./delete-car";
+import { ArrowRightIcon, CloseIcon } from "./icons";
 import { useGarage } from "@/lib/store";
 import { BODY_TYPE_LABEL, BodyType, Vehicle } from "@/lib/types";
 
@@ -30,11 +31,13 @@ type Props = {
   onClose: () => void;
   onSaved?: (vehicleId: string) => void;
   editVehicle?: Vehicle;
+  // Edit mode only: offers "Удалить автомобиль" with an inline confirmation.
+  onDelete?: () => void;
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Props) {
+export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDelete }: Props) {
   const addVehicle = useGarage((s) => s.addVehicle);
   const addSystem = useGarage((s) => s.addSystem);
   const updateVehicle = useGarage((s) => s.updateVehicle);
@@ -56,7 +59,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
     editVehicle?.bodyType ?? "",
   );
   const [errors, setErrors] = useState<DraftErrors>({});
-  const [saved, setSaved] = useState(false);
 
   const reset = useCallback(() => {
     setMake("");
@@ -68,7 +70,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
     setUnits("km");
     setBodyType("");
     setErrors({});
-    setSaved(false);
   }, []);
 
   const close = useCallback(() => {
@@ -95,7 +96,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
       setBodyType(editVehicle.bodyType ?? "");
     }
     setErrors({});
-    setSaved(false);
   }, [open, editVehicle]);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
     if (!mileage.trim()) {
       next.mileage = "Укажите текущий пробег.";
     } else if (!Number.isFinite(m) || m < 0 || m > 10_000_000) {
-      next.mileage = "Пробег должен быть неотрицательным числом.";
+      next.mileage = "Введите пробег цифрами.";
     }
     return next;
   }
@@ -173,7 +173,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
       addSystem({ vehicleId: vehicle.id, name: "Прочее", category: "other" });
       savedId = vehicle.id;
     }
-    setSaved(true);
     reset();
     onClose();
     onSaved?.(savedId);
@@ -246,12 +245,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
           </div>
         )}
 
-        {saved ? (
-          <div className={styles.success} role="status">
-            <CheckIcon />
-            Готово — машина сохранена. Шаг «Дополнительно» появится, когда соберём эту поверхность.
-          </div>
-        ) : null}
 
         <form className={styles.form} onSubmit={onSubmit} noValidate>
           <div className={styles.row}>
@@ -347,7 +340,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
           <div className={`${styles.field} ${styles.full}`}>
             <label className={styles.label} htmlFor="f-body">
               Тип кузова
-              <span className={styles.optional}>для подходящей схемы машины</span>
+              <span className={styles.optional}>для схемы на странице автомобиля</span>
             </label>
             <select
               id="f-body"
@@ -447,6 +440,8 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle }: Pr
               </div>
             </div>
           </div>
+
+          {editVehicle && onDelete ? <DeleteCar vehicle={editVehicle} onDelete={onDelete} /> : null}
 
           <div className={styles.footer}>
             <button

@@ -142,6 +142,9 @@
   pointer-events: none;
 }
 
+/* Number + unit select side by side (resource by time). */
+.unitInput { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 6px; }
+
 .hint { font-size: var(--fs-xs); color: var(--muted); line-height: 1.4; }
 .error { font-size: var(--fs-xs); color: var(--danger); font-weight: 500; }
 
@@ -179,7 +182,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--muted);
@@ -203,6 +206,9 @@
   gap: 12px;
 }
 
+.footerActions { display: flex; align-items: center; gap: 8px; }
+.footer .deleteLink { align-self: center; }
+
 .ghostBtn {
   padding: 10px 16px;
   font-weight: 500;
@@ -211,6 +217,42 @@
   transition: background-color 120ms ease, color 120ms ease;
 }
 .ghostBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
+
+/* ─── Destructive actions: quiet link, then an inline confirmation ─── */
+.deleteLink {
+  align-self: flex-start;
+  padding: 4px 0;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 120ms ease;
+}
+.deleteLink:hover { color: var(--danger-ink); }
+.deleteLink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
+
+.deleteConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--danger) 6%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
+}
+.deleteTitle { font-weight: 600; color: var(--ink); font-size: var(--fs-base); }
+.deleteText { font-size: var(--fs-sm); color: var(--body); line-height: 1.5; }
+.deleteActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+.dangerBtn {
+  padding: 8px 16px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--danger-ink);
+  border-radius: var(--r-sm);
+  transition: background-color 120ms ease;
+}
+.dangerBtn:hover { background: color-mix(in srgb, var(--danger-ink) 85%, var(--ink)); }
+.dangerBtn:focus-visible { outline: 2px solid var(--danger-ink); outline-offset: 2px; }
 
 .primary {
   display: inline-flex;

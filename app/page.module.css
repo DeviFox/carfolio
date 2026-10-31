@@ -81,6 +81,11 @@
 
 .navItem.active :global(svg) { color: var(--accent); }
 
+/* Sections that exist in the nav but are not built yet ("В разработке" on hover). */
+.navItem.soon,
+.navItem.soon:hover { cursor: default; background: transparent; color: var(--faint); }
+.navItem.soon :global(svg) { color: var(--faint); }
+
 .navItem :global(svg) {
   width: 18px;
   height: 18px;
@@ -92,7 +97,7 @@
 
 .railFoot {
   padding: 10px;
-  color: var(--faint);
+  color: var(--muted);
   font-size: var(--fs-xs);
   font-family: var(--font-geist-mono);
   letter-spacing: 0.02em;
@@ -246,14 +251,12 @@
 }
 .lvLabel {
   font-size: var(--fs-xs);
-  letter-spacing: 0.02em;
+  font-weight: 500;
   color: var(--muted);
-  font-family: var(--font-geist-mono);
-  text-transform: lowercase;
 }
 .lvName { font-weight: 600; color: var(--ink); font-size: var(--fs-base); }
 .lvMileage { color: var(--body); font-size: var(--fs-sm); font-family: var(--font-geist-mono); font-variant-numeric: tabular-nums; }
-.lvChevron { color: var(--muted); font-size: 18px; line-height: 1; transition: color 140ms ease, transform 140ms ease; }
+.lvChevron { width: 16px; height: 16px; color: var(--muted); transition: color 140ms ease, transform 140ms ease; }
 .lastViewed:hover .lvChevron { color: var(--accent); transform: translateX(2px); }
 
 .carCard {
@@ -299,7 +302,7 @@
   border-top: 1px solid var(--line);
   font-size: var(--fs-xs);
   color: var(--muted);
-  font-family: var(--font-geist-mono);
+  font-variant-numeric: tabular-nums;
 }
 .carStat strong { color: var(--ink); font-weight: 600; font-family: inherit; }
 .carStatSep { color: var(--line-dash); }

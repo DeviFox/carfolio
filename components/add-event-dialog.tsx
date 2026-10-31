@@ -13,7 +13,7 @@ import {
   systemForCategory,
 } from "@/lib/compute";
 import { FLUIDS } from "@/lib/types";
-import type { Condition, MaintenanceType, Vehicle } from "@/lib/types";
+import type { Condition, InstalledPart, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Props = {
   open: boolean;
@@ -21,6 +21,9 @@ type Props = {
   vehicle: Vehicle;
   // Opens the form with a new component in this system.
   defaultSystemId?: string;
+  // Opens the form for this existing component, e.g. from its panel.
+  defaultComponentId?: string;
+  defaultType?: MaintenanceType;
 };
 
 import {
@@ -38,7 +41,14 @@ import {
   today,
 } from "./add-event-parts";
 
-export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId }: Props) {
+export default function AddEventDialog({
+  open,
+  onClose,
+  vehicle,
+  defaultSystemId,
+  defaultComponentId,
+  defaultType = "replacement",
+}: Props) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLSelectElement>(null);
@@ -62,9 +72,9 @@ export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId
     [components, vehicle.id],
   );
 
-  const [type, setType] = useState<MaintenanceType>("replacement");
+  const [type, setType] = useState<MaintenanceType>(defaultType);
   const [pick, setPick] = useState(
-    defaultSystemId || vehicleComponents.length === 0 ? NEW : "",
+    defaultComponentId ?? (defaultSystemId || vehicleComponents.length === 0 ? NEW : ""),
   );
   const [name, setName] = useState("");
   const [systemId, setSystemId] = useState(defaultSystemId ?? vehicleSystems[0]?.id ?? "");
@@ -73,8 +83,12 @@ export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId
   const [cost, setCost] = useState("");
   const [currency, setCurrency] = useState("RUB");
   const [track, setTrack] = useState<boolean | null>(null);
-  const [lifeKm, setLifeKm] = useState("");
-  const [lifeDays, setLifeDays] = useState("");
+  const [lifeKm, setLifeKm] = useState(() =>
+    lifeOf(defaultComponentId, installedParts, "expectedLifeKm"),
+  );
+  const [lifeDays, setLifeDays] = useState(() =>
+    lifeOf(defaultComponentId, installedParts, "expectedLifeDays"),
+  );
   const [condition, setCondition] = useState<Condition | "">("");
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -135,7 +149,7 @@ export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId
       }
       if (!systemId) e.system = "Выберите систему.";
     } else if (pickedFluid && !fluidSystem) {
-      e.component = "У машины нет ни одной системы.";
+      e.component = "У автомобиля нет систем, компонент некуда добавить.";
     } else if (!isNote && !selected && !pickedFluid) {
       e.component = isFluid ? "Выберите жидкость." : "Выберите компонент.";
     }
@@ -144,23 +158,23 @@ export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId
     if (mileage.trim()) {
       const n = toNumber(mileage);
       if (!Number.isFinite(n) || n < 0) {
-        e.mileage = "Пробег должен быть неотрицательным числом.";
+        e.mileage = "Введите пробег цифрами.";
       } else if (n > vehicle.currentMileageKm) {
-        e.mileage = `Выше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}).`;
+        e.mileage = `Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}). Сначала обновите пробег автомобиля.`;
       }
     } else if (!isNote) {
       e.mileage = "Укажите пробег.";
     }
     if (showCost && cost.trim()) {
       const n = toNumber(cost);
-      if (!Number.isFinite(n) || n < 0) e.cost = "Стоимость должна быть неотрицательным числом.";
+      if (!Number.isFinite(n) || n < 0) e.cost = "Стоимость не может быть отрицательной.";
     }
     if (tracking && lifeKm.trim()) {
       const n = toNumber(lifeKm);
-      if (!Number.isFinite(n) || n <= 0) e.lifeKm = "Ресурс должен быть положительным числом.";
+      if (!Number.isFinite(n) || n <= 0) e.lifeKm = "Ресурс должен быть больше нуля.";
     }
     if (tracking && lifeDays.trim() && !(toNumber(lifeDays) > 0)) {
-      e.lifeDays = "Ресурс должен быть положительным числом.";
+      e.lifeDays = "Ресурс должен быть больше нуля.";
     }
     if (isNote && !notes.trim()) e.notes = "Напишите текст заметки.";
     return e;
@@ -464,4 +478,13 @@ export default function AddEventDialog({ open, onClose, vehicle, defaultSystemId
       </div>
     </div>
   );
+}
+
+function lifeOf(
+  componentId: string | undefined,
+  parts: InstalledPart[],
+  key: "expectedLifeKm" | "expectedLifeDays",
+): string {
+  const value = componentId ? findActiveInstalledPart(componentId, parts)?.[key] : undefined;
+  return value ? String(value) : "";
 }

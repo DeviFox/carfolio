@@ -4,24 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import AddCarDialog from "@/components/add-car-dialog";
-import {
-  CarIcon,
-  GarageIcon,
-  HistoryIcon,
-  PlusIcon,
-  SettingsIcon,
-} from "@/components/icons";
+import AppRail from "@/components/app-rail";
+import { ArrowRightIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
 import { formatKm } from "@/lib/compute";
-
-type NavItem = { label: string; icon: React.ReactNode; active?: boolean };
-
-const NAV: NavItem[] = [
-  { label: "Гараж", icon: <GarageIcon />, active: true },
-  { label: "Автомобили", icon: <CarIcon /> },
-  { label: "История", icon: <HistoryIcon /> },
-  { label: "Настройки", icon: <SettingsIcon /> },
-];
 
 export default function Page() {
   const router = useRouter();
@@ -131,53 +117,26 @@ export default function Page() {
             Добавить
           </button>
         </header>
-        <aside className={styles.rail} aria-label="Разделы приложения">
-          <div className={styles.brand}>
-            <div className={styles.brandMark} aria-hidden="true">c</div>
-            <div className={styles.brandName}>
-              carfolio
-              <span className={styles.brandSub}>визуальный гараж</span>
-            </div>
-          </div>
-          <nav>
-            <ul className={styles.navList}>
-              {NAV.map((item) => (
-                <li
-                  key={item.label}
-                  className={`${styles.navItem} ${item.active ? styles.active : ""}`}
-                  aria-current={item.active ? "page" : undefined}
-                >
-                  {item.icon}
-                  {item.label}
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className={styles.navSpacer} />
-          <div className={styles.railFoot}>v0.0.1 · бета</div>
-        </aside>
+        <AppRail />
 
         <main className={styles.main}>
           <header className={styles.header}>
             <div>
               <h1 className={styles.h1}>Мой гараж</h1>
-              <p className={styles.sub}>
-                {hasCars
-                  ? `${vehicles.length} ${plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")} · текущее состояние.`
-                  : "Ваши автомобили и их текущее состояние."}
-              </p>
             </div>
-            <button
-              type="button"
-              className={styles.primaryBtn}
-              onClick={() => setOpen(true)}
-            >
-              <PlusIcon />
-              Добавить авто
-            </button>
+	          {vehicles.length > 0 ?
+		          <button
+			          type="button"
+			          className={styles.primaryBtn}
+			          onClick={() => setOpen(true)}
+		          >
+			          <PlusIcon/>
+			          Добавить автомобиль
+		          </button>
+		          : null}
           </header>
 
-          {hasCars && lastViewed ? (
+          {hasCars && lastViewed && vehicles.length > 1 ? (
             <button
               type="button"
               className={styles.lastViewed}
@@ -188,7 +147,7 @@ export default function Page() {
               <span className={styles.lvMileage}>
                 {formatKm(lastViewed.currentMileageKm, lastViewed.units)}
               </span>
-              <span className={styles.lvChevron} aria-hidden="true">→</span>
+              <ArrowRightIcon className={styles.lvChevron} />
             </button>
           ) : null}
 
@@ -223,9 +182,6 @@ export default function Page() {
                       const vehicleEvents = events.filter(
                         (e) => e.vehicleId === v.id,
                       );
-                      const partsCount = installedParts.filter((p) =>
-                        vehicleComponents.some((c) => c.id === p.componentId),
-                      ).length;
                       return (
                         <button
                           key={v.id}
@@ -255,15 +211,6 @@ export default function Page() {
                               <strong>{vehicleEvents.length}</strong> запис
                               {plural(vehicleEvents.length, "ь", "и", "ей")}
                             </span>
-                            {partsCount > 0 ? (
-                              <>
-                                <span className={styles.carStatSep}>·</span>
-                                <span className={styles.carStat}>
-                                  <strong>{partsCount}</strong> детал
-                                  {plural(partsCount, "ь", "и", "ей")}
-                                </span>
-                              </>
-                            ) : null}
                           </div>
                         </button>
                       );
@@ -293,7 +240,7 @@ export default function Page() {
             <strong>{hydrated ? vehicles.length : 0}</strong>
             &nbsp;{plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
             <span className={styles.sep}>·</span>
-            данные хранятся локально, пока не подключён аккаунт
+            данные хранятся только в этом браузере
           </div>
         </main>
       </div>

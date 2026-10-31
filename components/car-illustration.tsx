@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import styles from "./car-illustration.module.css";
 import {
   buildCar,
@@ -33,6 +33,16 @@ const ZONE_LABEL: Partial<Record<SystemCategory, string>> = {
   other: "Прочее",
 };
 
+const STATE_TEXT: Record<ZoneState, string> = {
+  ok: "в норме",
+  attention: "требует внимания",
+  critical: "критично",
+  unknown: "нет данных",
+};
+
+// Room kept around the drawn car for the hover label and the badge halos.
+const CROP_PAD = 22;
+
 const FILL_CLASS: Record<string, string> = {
   paper: "iso-fill",
   face: styles.fillFace,
@@ -54,23 +64,38 @@ export default function CarIllustration({
   const titleId = useId();
   const [hovered, setHovered] = useState<SystemCategory | null>(null);
   const car = useMemo(() => buildCar(bodyType), [bodyType]);
+  // The silhouettes are drawn on a shared canvas with generous margins; crop
+  // the view to the car so it fills its column instead of floating in white.
+  const carRef = useRef<SVGGElement>(null);
+  const [viewBox, setViewBox] = useState(`0 0 ${VIEW_W} ${VIEW_H}`);
+  useLayoutEffect(() => {
+    const box = carRef.current?.getBBox();
+    if (!box || box.width === 0) return;
+    setViewBox(
+      [box.x - CROP_PAD, box.y - CROP_PAD, box.width + CROP_PAD * 2, box.height + CROP_PAD * 2]
+        .map((n) => Math.round(n))
+        .join(" "),
+    );
+  }, [car]);
 
   return (
     <div className={`iso ${styles.wrap}`} data-theme="light">
       <svg
         className={`iso-svg ${styles.svg}`}
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        role="img"
+        viewBox={viewBox}
+        role="group"
         aria-labelledby={titleId}
         focusable="false"
       >
-        <title id={titleId}>Твой автомобиль</title>
+        <title id={titleId}>Ваш автомобиль</title>
 
-        {car.groups.map((group) => (
-          <g key={group.key} className={styles[`g-${group.key}`]}>
-            {group.parts.map((part, i) => renderPart(part, `${group.key}-${i}`))}
-          </g>
-        ))}
+        <g ref={carRef} aria-hidden="true">
+          {car.groups.map((group) => (
+            <g key={group.key} className={styles[`g-${group.key}`]}>
+              {group.parts.map((part, i) => renderPart(part, `${group.key}-${i}`))}
+            </g>
+          ))}
+        </g>
 
         {/* Clickable zones (invisible until hover) */}
         <g className={styles.zones}>
@@ -102,7 +127,7 @@ export default function CarIllustration({
                   },
                   role: "button",
                   tabIndex: 0,
-                  "aria-label": ZONE_LABEL[id],
+                  "aria-label": `${ZONE_LABEL[id]}: ${STATE_TEXT[zoneStates[id] ?? "unknown"]}`,
                 }
               : {};
             const d = hint.polygons.map((poly) => polyPathOf(poly)).join(" ");

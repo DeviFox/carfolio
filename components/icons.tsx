@@ -64,11 +64,28 @@ export function PlusIcon(p: Props) {
   );
 }
 
+export function ArrowLeftIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M19 12H5" />
+      <path d="m11 6-6 6 6 6" />
+    </svg>
+  );
+}
+
 export function ArrowRightIcon(p: Props) {
   return (
     <svg {...base} {...p}>
       <path d="M5 12h14" />
       <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }

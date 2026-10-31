@@ -10,7 +10,7 @@
   width: 100%;
   height: auto;
   overflow: visible;
-  max-height: 320px;
+  max-height: 400px;
   user-select: none;
 }
 
@@ -58,7 +58,11 @@
 .badgePulse {
   fill: currentColor;
   opacity: 0.26;
-  animation: carpulse 2s ease-in-out infinite;
+  /* Three beats to draw the eye on arrival, then the dot holds still. */
+  animation: carpulse 2s ease-in-out 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .badgePulse { animation: none; }
 }
 @keyframes carpulse {
   0%, 100% { opacity: 0.26; }

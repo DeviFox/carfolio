@@ -27,15 +27,15 @@
     "insight-1793107785397-1hd5": {
       "id": "insight-1793107785397-1hd5",
       "category": "insights",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 1,
+      "accessCount": 28,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-r098": {
       "id": "insight-1793107785397-r098",
       "category": "insights",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 1,
+      "accessCount": 28,
       "createdAt": 1793107785397
     },
     "insight-1793107785397-5wec": {
@@ -111,15 +111,15 @@
     "insight-1793107785397-sbd8": {
       "id": "insight-1793107785397-sbd8",
       "category": "insights",
-      "confidence": 0.55,
-      "accessCount": 1,
+      "confidence": 1,
+      "accessCount": 31,
       "createdAt": 1793107785397
     },
     "insight-1793151926763-jot1": {
       "id": "insight-1793151926763-jot1",
       "category": "insights",
-      "confidence": 0.55,
-      "accessCount": 1,
+      "confidence": 1,
+      "accessCount": 31,
       "createdAt": 1793151926763
     }
   },
