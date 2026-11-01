@@ -491,10 +491,12 @@ export function buildCar(bodyType: BodyType | undefined): CarShapes {
   zones.engine = rectZone(P, engineRear, engineFront, 44, W - 44, ROCKER + 14, belt - 4);
   zones.cooling = rectZone(P, -2, 10, 24, W - 24, ROCKER + 6, ROCKER + 34);
   zones.electrical = rectZone(P, params.cabinX0 + 6, bPillarX, params.cabinInset + 4, W - params.cabinInset - 4, belt + 4, shoulderZ - 6);
-  // Narrow tunnel along the centreline.
-  zones.transmission = rectZone(P, params.cabinX0 + 2, AXLE_REAR - 20, W / 2 - 14, W / 2 + 14, ROCKER - 2, ROCKER + 20);
-  // Narrow strip under the floor, below the transmission to avoid overlap.
-  zones.suspension = rectZone(P, AXLE_FRONT + 40, AXLE_REAR - 40, W / 2 - 18, W / 2 + 18, 0, ROCKER - 4);
+  // Narrow tunnel along the centreline, the front ~60% behind the engine: shorter
+  // than the suspension strip and raised off it, so the two read as different parts.
+  const tunnelEnd = params.cabinX0 + 2 + (AXLE_REAR - 22 - params.cabinX0) * 0.6;
+  zones.transmission = rectZone(P, params.cabinX0 + 2, tunnelEnd, W / 2 - 14, W / 2 + 14, ROCKER + 4, ROCKER + 20);
+  // Narrow strip under the floor, kept clearly below the transmission.
+  zones.suspension = rectZone(P, AXLE_FRONT + 40, AXLE_REAR - 40, W / 2 - 18, W / 2 + 18, 0, ROCKER - 10);
   // Wider tires ring, smaller brakes disc.
   zones.tires = wheelZone(P, [AXLE_FRONT, AXLE_REAR], Y_NEAR, WHEEL_R + 8, WHEEL_R, WHEEL_R - 10);
   zones.brakes = wheelZone(P, [AXLE_FRONT, AXLE_REAR], Y_NEAR, WHEEL_R - 10);
@@ -1036,11 +1038,12 @@ function buildShapedCar(params: ShapedCarParams): CarShapes {
   zones.engine = rectZone(P, X_WIND_BASE + 24, L - 50, 44, W - 44, Z_ROCKER + 14, Z_BELT - 4);
   zones.cooling = rectZone(P, L - 10, L + 2, 24, W - 24, Z_ROCKER + 6, Z_ROCKER + 34);
   zones.electrical = rectZone(P, X_WIND_TOP, X_BPILLAR, 20, W - 20, Z_BELT + 4, Z_ROOF - 4);
-  // Transmission: narrow tunnel along the centreline.
-  zones.transmission = rectZone(P, AXLE_R + 20, X_WIND_BASE - 4, W / 2 - 14, W / 2 + 14, Z_ROCKER - 2, Z_ROCKER + 20);
-  // Suspension: narrow strip under the floor, below the transmission so they
-  // don't overlap in projection.
-  zones.suspension = rectZone(P, AXLE_R + 36, AXLE_F - 36, W / 2 - 18, W / 2 + 18, 0, Z_ROCKER - 4);
+  // Transmission: narrow tunnel along the centreline, the front ~60% behind the
+  // engine (the car faces +x here), shorter than the suspension and raised off it.
+  const tunnelStart = X_WIND_BASE - 4 - (X_WIND_BASE - 24 - AXLE_R) * 0.6;
+  zones.transmission = rectZone(P, tunnelStart, X_WIND_BASE - 4, W / 2 - 14, W / 2 + 14, Z_ROCKER + 4, Z_ROCKER + 20);
+  // Suspension: narrow strip under the floor, kept clearly below the transmission.
+  zones.suspension = rectZone(P, AXLE_R + 36, AXLE_F - 36, W / 2 - 18, W / 2 + 18, 0, Z_ROCKER - 10);
   // Tires render first (wide ring with a bigger hole), brakes paint on top
   // (small disc in the hole). Hover on the rim selects tires, hover on the
   // hub selects brakes — bigger ring = easier to hit.

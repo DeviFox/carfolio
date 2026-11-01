@@ -1,0 +1,193 @@
+/* First-run story, as a dialog: text on the left, a live fragment of the real UI on the right. */
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--card-raised);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: cardIn 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  align-items: center;
+  animation: pageIn 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes pageIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.text { display: flex; flex-direction: column; gap: 8px; padding-right: 8px; }
+.counter { font-size: var(--fs-xs); color: var(--muted); letter-spacing: 0.02em; }
+.title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.body { font-size: var(--fs-base); color: var(--body); line-height: 1.6; max-width: 58ch; text-wrap: pretty; }
+
+/* The illustration well: a quiet panel holding a real-looking piece of the app. */
+.art {
+  position: relative;
+  min-height: 168px;
+  display: grid;
+  place-items: center;
+  padding: 28px 24px 20px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--line) 35%, var(--card));
+}
+.example {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--body);
+}
+
+.rowName { font-size: var(--fs-sm); font-weight: 500; color: var(--ink); }
+
+/* 1 — systems with their states */
+.rows {
+  list-style: none;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.rows li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+}
+.rows li + li { border-top: 1px solid var(--line); }
+
+/* 2 — a tracked part */
+.part {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 12px;
+}
+.partHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.bar {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+  overflow: hidden;
+}
+.bar span { display: block; height: 100%; border-radius: inherit; background: var(--ok); }
+.barText { font-size: var(--fs-xs); color: var(--muted); }
+.barText strong { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+/* 3 — the odometer */
+.odo { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; }
+.odoLabel { font-size: var(--fs-xs); font-weight: 500; color: var(--muted); }
+.odoValue {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.odoValue small { font-size: var(--fs-sm); font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.odoBtn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--body);
+}
+
+/* 4 — a field carried over from the last replacement */
+.field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.fieldLabel { font-size: var(--fs-sm); font-weight: 500; color: var(--ink); }
+.fieldInput {
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line-strong));
+  background: color-mix(in srgb, var(--accent) 5%, var(--card));
+  font-size: var(--fs-base);
+  color: var(--ink);
+}
+.fieldHint { font-size: var(--fs-xs); font-weight: 500; color: var(--accent); }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.nav { display: flex; align-items: center; gap: 8px; }
+/* Secondary, so it doesn't compete with the blue "Далее". */
+.skip {
+  padding: 10px 4px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+  border-radius: var(--r-xs);
+  transition: color 120ms ease;
+}
+.skip:hover { color: var(--ink); }
+.reopenHint { font-size: var(--fs-xs); color: var(--muted); line-height: 1.4; min-width: 0; }
+.dots { display: flex; gap: 6px; margin-right: 8px; }
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--line-strong);
+  transition: width 200ms ease, background-color 200ms ease;
+}
+.dotOn { width: 18px; background: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation-name: none; }
+  .page { animation-name: none; }
+  .dot { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .card { padding: 20px 20px 16px; }
+  .page { grid-template-columns: 1fr; gap: 20px; }
+  .art { order: -1; min-height: 140px; }
+  .text { padding-right: 0; }
+  .dots { margin-right: 4px; }
+  /* The reopen hint takes its own line above the buttons instead of squeezing them. */
+  .footer { flex-wrap: wrap; row-gap: 12px; }
+  .reopenHint { flex-basis: 100%; }
+  .nav { margin-left: auto; }
+}
+
+/* Phones: a bottom sheet, like the other dialogs (the overlay docks it at this width). */
+@media (max-width: 560px) {
+  .card { border-radius: var(--r-lg) var(--r-lg) 0 0; max-height: 90vh; }
+}

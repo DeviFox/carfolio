@@ -51,8 +51,10 @@
   transition: background-color 120ms ease, color 120ms ease;
 }
 .toolBtn :global(svg) { width: 20px; height: 20px; }
-a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
-.toolCurrent { color: var(--accent); background: var(--accent-soft); }
+.appTools { display: flex; align-items: center; gap: 4px; }
+a.toolBtn:hover, button.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
+/* On its own page the garage mark is a "you are here" sign, not a button. */
+.toolCurrent { color: var(--ink); cursor: default; }
 
 /* Settings exist as a place, not yet as a screen: a small grey gear, tagged "скоро". */
 .settingsSoon {
@@ -64,7 +66,7 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   color: var(--faint);
   cursor: default;
 }
-.settingsSoon :global(svg) { width: 16px; height: 16px; }
+.settingsSoon :global(svg) { width: 20px; height: 20px; }
 .soonBadge {
   position: absolute;
   top: -3px;
@@ -72,8 +74,8 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   padding: 0 4px;
   border-radius: var(--r-pill);
   background: var(--line);
-  color: var(--muted);
-  font-size: 9px;
+  color: var(--body);
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.02em;
@@ -95,7 +97,8 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   display: flex;
   flex-direction: column;
   gap: 40px;
-  max-width: 1200px;
+  /* Same measure as the car page, so the header's button lines up under the settings corner. */
+  width: min(100%, 1600px);
 }
 
 .header {
@@ -141,7 +144,8 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Cards keep a card's size; wider screens fit more of them instead of stretching. */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 360px));
   gap: 24px;
 }
 
@@ -218,33 +222,9 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
 }
 .statusLine strong { color: var(--ink); font-weight: 600; }
 .statusLine .sep { color: var(--line-dash); margin: 0 2px; }
+/* Mobile top bar: the help icon sits beside the primary action. */
+.topActions { display: flex; align-items: center; gap: 4px; }
 
-.lastViewed {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 14px;
-  align-items: center;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 14px 18px;
-  text-align: left;
-  color: var(--body);
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
-}
-.lastViewed:hover {
-  border-color: var(--accent);
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1), 0 6px 16px rgba(37, 99, 235, 0.08);
-}
-.lvLabel {
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  color: var(--muted);
-}
-.lvName { font-weight: 600; color: var(--ink); font-size: var(--fs-base); }
-.lvMileage { color: var(--body); font-size: var(--fs-sm); font-family: var(--font-geist-mono); font-variant-numeric: tabular-nums; }
-.lvChevron { width: 16px; height: 16px; color: var(--muted); transition: color 140ms ease, transform 140ms ease; }
-.lastViewed:hover .lvChevron { color: var(--accent); transform: translateX(2px); }
 
 .carCard {
   display: flex;
@@ -280,6 +260,9 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   color: var(--ink);
   letter-spacing: -0.015em;
 }
+/* Unknown mileage reads as a quiet note, not as a figure. */
+.carMileageMissing { margin-top: 10px; font-size: var(--fs-sm); color: var(--muted); }
+
 .carCardFooter {
   display: flex;
   flex-wrap: wrap;
@@ -291,8 +274,15 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.carStat strong { color: var(--ink); font-weight: 600; font-family: inherit; }
-.carStatSep { color: var(--line-dash); }
+.carCardFooter { flex-wrap: nowrap; min-width: 0; }
+.carHealth {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
 
 .ghostLoad {
   min-height: 240px;
@@ -349,9 +339,9 @@ a.toolBtn:hover { background: color-mix(in srgb, var(--line) 60%, transparent); 
   .emptySlot { min-height: 220px; padding: 32px 20px; }
   .header .primaryBtn { display: none; }
 
-  .statusLine { font-size: 11px; flex-wrap: wrap; }
+  /* Phones: the second clause gets its own line instead of a dangling "·". */
+  .statusLine { flex-wrap: wrap; row-gap: 4px; }
+  .statusLine .sep { display: none; }
+  .statusLine .statusNote { flex-basis: 100%; }
 }
 
-@media (min-width: 821px) and (max-width: 1100px) {
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}

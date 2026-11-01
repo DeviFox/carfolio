@@ -8,4 +8,9 @@ next-env.d.ts
 
 .impeccable/config.local.json
 .impeccable/review/
-.impeccable/build/
+/.impeccable/
+/.claude-flow/
+/.claude/
+/.serena/
+*.tsbuildinfo
+

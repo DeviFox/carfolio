@@ -109,7 +109,8 @@
 
 .mileage {
   display: flex;
-  align-items: flex-end;
+  /* The button sits level with the reading block, not with its small "Обновлён" line. */
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -122,7 +123,8 @@
 @media (min-width: 1280px) {
   /* The car is cropped to its own bounds, so a narrower stage still shows it
      large; the ledger gets the width its aligned columns need. */
-  .layout { grid-template-columns: minmax(340px, 4fr) 8fr; }
+  /* Without the side rail the extra width goes to the car, so the ledger keeps a readable row length. */
+  .layout { grid-template-columns: minmax(340px, 3fr) 5fr; }
   .stage {
     position: sticky;
     top: 24px;

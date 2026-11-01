@@ -160,6 +160,40 @@ export function rollupStatus(labels: StatusLabel[]): StatusLabel {
   );
 }
 
+// One car's state for the garage card: the worst known status, the parts that
+// need attention (worst first) and how many parts are tracked at all.
+export type VehicleHealth = {
+  label: StatusLabel;
+  flagged: string[];
+  known: number;
+  total: number;
+};
+
+export function vehicleHealth(
+  vehicle: Vehicle,
+  components: Component[],
+  installedParts: InstalledPart[],
+  inspections: ComponentInspection[],
+  nowDate: Date = new Date(),
+): VehicleHealth {
+  const rows = components
+    .filter((c) => c.vehicleId === vehicle.id && !c.isArchived)
+    .map((c) => {
+      const resource = computeResource(findActiveInstalledPart(c.id, installedParts), vehicle, nowDate);
+      return { name: c.name, label: componentStatus(resource, latestInspectionFor(c.id, inspections)).label };
+    });
+  const flagged = rows
+    .filter((r) => r.label === "critical" || r.label === "attention")
+    .sort((a, b) => ROLLUP_ORDER[b.label] - ROLLUP_ORDER[a.label])
+    .map((r) => r.name);
+  return {
+    label: rollupStatus(rows.map((r) => r.label)),
+    flagged,
+    known: rows.filter((r) => r.label !== "unknown").length,
+    total: rows.length,
+  };
+}
+
 export function formatDuration(days: number): string {
   if (days < 60) return `${days} дн.`;
   const months = Math.round(days / 30.44);

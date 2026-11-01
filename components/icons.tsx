@@ -102,6 +102,16 @@ export function CloseIcon(p: Props) {
   );
 }
 
+export function HelpIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7" />
+      <path d="M12 17.2v.1" />
+    </svg>
+  );
+}
+
 export function CheckIcon(p: Props) {
   return (
     <svg {...base} {...p}>

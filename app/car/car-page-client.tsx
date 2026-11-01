@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import shellStyles from "@/app/page.module.css";
 import CarIllustration from "@/components/car-illustration";
 import AppBar, { VersionTag } from "@/components/app-bar";
+import IntroCard from "@/components/intro-card";
 import AttentionList from "@/components/attention-list";
 import ComponentPanel from "@/components/component-panel";
 import EventDialog from "@/components/event-dialog";
@@ -50,6 +51,7 @@ export default function CarPageClient() {
 	const [openComponentId, setOpenComponentId] = useState<string | null>(null);
 	const [editEventId, setEditEventId]         = useState<string | null>(null);
 	const [editOpen, setEditOpen]       = useState(false);
+	const [helpOpen, setHelpOpen]       = useState(false);
 	// Set while a delete navigates away, so the page doesn't flash "не найден".
 	const [leaving, setLeaving]         = useState(false);
 	// Hovering or focusing a system row lights up its zone on the sticky car.
@@ -225,7 +227,7 @@ export default function CarPageClient() {
 					</button>
 				</header>
 
-				<AppBar home/>
+				<AppBar home onHelp={() => setHelpOpen(true)}/>
 
 				<main className={styles.main}>
 					<header className={styles.heroHead}>
@@ -366,6 +368,7 @@ export default function CarPageClient() {
 				<VersionTag/>
 			</div>
 
+			{helpOpen ? <IntroCard onClose={() => setHelpOpen(false)}/> : null}
 			<UpdateMileageDialog
 				open={mileageOpen}
 				onClose={() => setMileageOpen(false)}

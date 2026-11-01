@@ -1,27 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import AddCarDialog from "@/components/add-car-dialog";
 import AppBar, { VersionTag } from "@/components/app-bar";
-import { ArrowRightIcon, PlusIcon } from "@/components/icons";
+import IntroCard, { introDismissed } from "@/components/intro-card";
+import { HelpIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
-import { formatKm } from "@/lib/compute";
+import { formatKm, vehicleHealth } from "@/lib/compute";
+import StatusPill from "@/components/status-pill";
+import { SYSTEM_STATUS_TEXT } from "@/components/system-list";
 
 export default function Page() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  // The story about how carfolio works, until the owner dismisses it.
+  const [showIntro, setShowIntro] = useState(false);
+  // Opened by itself (not from "?"): on close, focus goes to the next step, adding a car.
+  const introAuto = useRef(false);
+  const addSlotRef = useRef<HTMLButtonElement>(null);
 
   const vehicles = useGarage((s) => s.vehicles);
-  const lastViewedVehicleId = useGarage((s) => s.lastViewedVehicleId);
   const components = useGarage((s) => s.components);
   const installedParts = useGarage((s) => s.installedParts);
-  const events = useGarage((s) => s.events);
+  const inspections = useGarage((s) => s.inspections);
 
   useEffect(() => {
     setHydrated(true);
+    // Opens by itself once, for someone arriving to an empty garage.
+    const auto = !introDismissed() && useGarage.getState().vehicles.length === 0;
+    introAuto.current = auto;
+    setShowIntro(auto);
     const params = new URLSearchParams(window.location.search);
     if (params.get("dialog") === "add") setOpen(true);
     const seedBody = params.get("seed-body");
@@ -96,8 +107,6 @@ export default function Page() {
     }
   }, [router]);
 
-  const lastViewed = vehicles.find((v) => v.id === lastViewedVehicleId) ?? null;
-  const hasCars = hydrated && vehicles.length > 0;
 
   return (
     <>
@@ -107,65 +116,44 @@ export default function Page() {
             <div className={styles.brandMark} aria-hidden="true">c</div>
             <div className={styles.brandName}>carfolio</div>
           </div>
-          <button
-            type="button"
-            className={styles.primaryBtn}
-            onClick={() => setOpen(true)}
-            aria-label="Добавить автомобиль"
-          >
-            <PlusIcon />
-            Добавить
-          </button>
+          <div className={styles.topActions}>
+            <button type="button" className={styles.toolBtn} onClick={() => setShowIntro(true)} aria-label="Как это работает">
+              <HelpIcon />
+            </button>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              onClick={() => setOpen(true)}
+              aria-label="Добавить автомобиль"
+            >
+              <PlusIcon />
+              Добавить
+            </button>
+          </div>
         </header>
-        <AppBar />
+        <AppBar onHelp={() => setShowIntro(true)} />
 
         <main className={styles.main}>
           <header className={styles.header}>
             <div>
               <h1 className={styles.h1}>Мой гараж</h1>
             </div>
-	          {vehicles.length > 0 ?
-		          <button
-			          type="button"
-			          className={styles.primaryBtn}
-			          onClick={() => setOpen(true)}
-		          >
-			          <PlusIcon/>
-			          Добавить автомобиль
-		          </button>
-		          : null}
           </header>
 
-          {hasCars && lastViewed && vehicles.length > 1 ? (
-            <button
-              type="button"
-              className={styles.lastViewed}
-              onClick={() => router.push(`/car?id=${encodeURIComponent(lastViewed.id)}`)}
-            >
-              <span className={styles.lvLabel}>Последний просмотр</span>
-              <span className={styles.lvName}>{lastViewed.name}</span>
-              <span className={styles.lvMileage}>
-                {lastViewed.currentMileageKm !== undefined
-                  ? formatKm(lastViewed.currentMileageKm, lastViewed.units)
-                  : "пробег не указан"}
-              </span>
-              <ArrowRightIcon className={styles.lvChevron} />
-            </button>
-          ) : null}
 
           <section aria-labelledby="garage-grid-label">
             <h2 id="garage-grid-label" className="sr-only">
               Автомобили в гараже
             </h2>
-            <div className={styles.grid} role="list">
+            <div className={styles.grid}>
               {hydrated ? (
                 vehicles.length === 0 ? (
                   <button
                     type="button"
+                    ref={addSlotRef}
                     className={styles.emptySlot}
                     onClick={() => setOpen(true)}
                     aria-label="Добавить первый автомобиль"
-                    role="listitem"
                   >
                     <div className={styles.emptyIcon} aria-hidden="true">
                       <PlusIcon />
@@ -178,19 +166,13 @@ export default function Page() {
                 ) : (
                   <>
                     {vehicles.map((v) => {
-                      const vehicleComponents = components.filter(
-                        (c) => c.vehicleId === v.id && !c.isArchived,
-                      );
-                      const vehicleEvents = events.filter(
-                        (e) => e.vehicleId === v.id,
-                      );
+                      const health = vehicleHealth(v, components, installedParts, inspections);
                       return (
                         <button
                           key={v.id}
                           type="button"
                           className={styles.carCard}
                           onClick={() => router.push(`/car?id=${encodeURIComponent(v.id)}`)}
-                          role="listitem"
                         >
                           <div className={styles.carCardMain}>
                             <div className={styles.carName}>{v.name}</div>
@@ -199,19 +181,23 @@ export default function Page() {
                                 .filter(Boolean)
                                 .join(" · ") || "—"}
                             </div>
-                            <div className={`${styles.carMileage} numeric mono`}>
-                              {v.currentMileageKm !== undefined ? formatKm(v.currentMileageKm, v.units) : "Пробег не указан"}
-                            </div>
+                            {v.currentMileageKm !== undefined ? (
+                              <div className={`${styles.carMileage} numeric mono`}>{formatKm(v.currentMileageKm, v.units)}</div>
+                            ) : (
+                              <div className={styles.carMileageMissing}>Пробег не указан</div>
+                            )}
                           </div>
+                          {/* The car's state, not its bookkeeping: worst status, then what it is about. */}
                           <div className={styles.carCardFooter}>
-                            <span className={styles.carStat}>
-                              <strong>{vehicleComponents.length}</strong> компонент
-                              {plural(vehicleComponents.length, "", "а", "ов")}
-                            </span>
-                            <span className={styles.carStatSep}>·</span>
-                            <span className={styles.carStat}>
-                              <strong>{vehicleEvents.length}</strong> запис
-                              {plural(vehicleEvents.length, "ь", "и", "ей")}
+                            <StatusPill label={health.label} text={SYSTEM_STATUS_TEXT[health.label]} size="sm" />
+                            <span className={styles.carHealth}>
+                              {health.flagged.length > 0
+                                ? health.flagged.join(", ")
+                                : health.known > 0
+                                  ? `Отслеживается ${health.known} ${plural(health.known, "деталь", "детали", "деталей")}`
+                                  : health.total > 0
+                                    ? "Ресурс деталей не задан"
+                                    : "Добавьте первую замену"}
                             </span>
                           </div>
                         </button>
@@ -219,10 +205,10 @@ export default function Page() {
                     })}
                     <button
                       type="button"
+                      ref={addSlotRef}
                       className={styles.emptySlot}
                       onClick={() => setOpen(true)}
                       aria-label="Добавить ещё автомобиль"
-                      role="listitem"
                     >
                       <div className={styles.emptyIcon} aria-hidden="true">
                         <PlusIcon />
@@ -240,13 +226,23 @@ export default function Page() {
           <div className={styles.statusLine}>
             <span className={styles.statusDot} aria-hidden="true" />
             <strong>{hydrated ? vehicles.length : 0}</strong>
-            &nbsp;{plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
+            {plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
             <span className={styles.sep}>·</span>
-            данные хранятся только в этом браузере
+            <span className={styles.statusNote}>Пока Carfolio хранит данные в вашем браузере. В будущем добавим аккаунты и синхронизацию, чтобы пользоваться приложением с разных устройств.</span>
           </div>
         </main>
         <VersionTag />
       </div>
+
+      {showIntro ? (
+        <IntroCard
+          onClose={() => {
+            setShowIntro(false);
+            if (introAuto.current) requestAnimationFrame(() => addSlotRef.current?.focus());
+            introAuto.current = false;
+          }}
+        />
+      ) : null}
 
       <AddCarDialog
         open={open}

@@ -136,19 +136,15 @@ components:
   input-text-invalid:
     backgroundColor: "{colors.card}"
     textColor: "{colors.ink}"
-  nav-item:
+  tool-button:
     textColor: "{colors.body}"
     rounded: "{rounded.sm}"
-    padding: "8px 10px"
-    typography: "{typography.body}"
-  nav-item-active:
-    backgroundColor: "{colors.accent-soft}"
-    textColor: "{colors.accent}"
-  nav-item-soon:
+    size: "36px"
+  tool-current:
+    textColor: "{colors.ink}"
+  settings-soon:
     textColor: "{colors.faint}"
-    rounded: "{rounded.sm}"
-    padding: "8px 10px"
-    typography: "{typography.body}"
+    size: "16px"
   status-pill-ok:
     backgroundColor: "color-mix(in srgb, #10b981 12%, #ffffff)"
     textColor: "{colors.ok-ink}"
@@ -224,13 +220,13 @@ A near-white paper surface with a slate ink ramp, a single confident blue accent
 
 ### Neutral
 - **Paper** (`#f8fafc`): page surface. The world's ground.
-- **Card** (`#ffffff`): rail, inputs, dialog, step dots, raised toggle pill. Everything that lifts off paper.
+- **Card** (`#ffffff`): cards, inputs, dialog, step dots, raised toggle pill. Everything that lifts off paper.
 - **Ink** (`#0f172a`): headings, strong body, brand mark surface. The world's black.
-- **Body** (`#475569`): default text and nav-item ink at rest.
-- **Muted** (`#64748b`): subheads, hints, status-line prose, mono status text.
-- **Faint** (`#94a3b8`): placeholders, optional-field labels, dashed-border stroke. Never for text that must be read (2.6:1 on card).
+- **Body** (`#475569`): default text and tool-icon ink at rest.
+- **Muted** (`#64748b`): subheads, hints, status-line prose, mono status text, placeholders, the "опционально" tag (4.76:1 on card).
+- **Faint** (`#94a3b8`): dashed-border stroke, inert icons (the "скоро" settings gear). Never for text (2.6:1 on card).
 - **Ghost** (`#cbd5e1`): scrollbar thumb; soft disabled/trace states.
-- **Line** (`#e5e7eb`): hairline dividers (rail border, status-line rule, footer rule).
+- **Line** (`#e5e7eb`): hairline dividers (status-line rule, footer rule, card dividers).
 - **Line Strong** (`#cbd5e1`): input borders, step-rule, disabled button fill, step-dot default border.
 - **Line Dash** (`#94a3b8`): empty-slot dashed border, status dot default, separator glyph.
 - **Overlay** (`rgba(15, 23, 42, 0.42)`): modal scrim. The only translucent surface in the system.
@@ -263,7 +259,7 @@ A near-white paper surface with a slate ink ramp, a single confident blue accent
 - **Subtitle** (600, 16px, letter-spacing -0.01em): brand name, empty-slot title.
 - **Body** (400–500, 14px, line-height 1.5, letter-spacing -0.005em): default. Nav items, subhead paragraph, input text, labels, buttons.
 - **Small** (400–500, 13px): empty-slot description, step label, field label, hints, mobile top-bar brand.
-- **Micro** (500, 12px, letter-spacing 0.02em on mono): brand subtitle, optional-field tag, step-dot numeral (mono), status line (mono), rail-foot version (mono).
+- **Micro** (500, 12px, letter-spacing 0.02em on mono): optional-field tag, step-dot numeral (mono), status line (mono), the bottom-right version tag (mono).
 - **Figure** (Geist Mono 700, 28px, line-height 1): the current mileage and the resource percentage in the component sheet. Digit groups are split with a 0.22em optical gap, never the locale's full-width no-break space.
 - **Brand Mark** (700, 15px, letter-spacing -0.03em): the "c" glyph inside the 28×28 ink square.
 
@@ -274,9 +270,9 @@ A near-white paper surface with a slate ink ramp, a single confident blue accent
 
 ## Layout
 
-Desktop (≥821px) is a two-column CSS grid: a 240px sticky left rail against a flexible main column that caps at 1200px with 32–40px padding. The rail is `card`-white against `paper`-off-white, separated by a single `line` hairline on its right edge — no shadow, no gradient, just the surface step.
+There is no side rail and no header bar. Desktop (≥821px) is one column: a slim top row sits in the page's top margin (16px 40px 0, no background, no hairline) with the brand ("c" mark + "carfolio") and the garage mark on the left, and the "?" help icon and the inert settings gear on the right. The main column follows with 16px top and 40px side padding and runs to `min(100%, 1600px)`. The version tag sits in the page's bottom-right corner, at the end of the content.
 
-The garage uses a three-column CSS grid (`repeat(3, minmax(0, 1fr))`) with 24px gutter. At 821–1100px it collapses to two columns; at ≤820px it becomes a single-column flex layout and the left rail is replaced by a mobile top bar (card background, 12×16px padding, bottom hairline) that pairs the brand mark with a compact primary CTA. The in-page header CTA is hidden on mobile — the top bar owns the add action.
+The garage grid is `repeat(auto-fill, minmax(300px, 360px))` with a 24px gutter: cards keep a card's size and wider screens fit more of them rather than stretching them. There is no header add button on desktop; the dashed slot at the end of the grid is the add action. At ≤820px the top row is replaced by a mobile top bar (card background, 12×16px padding, bottom hairline): brand, "?" and the compact "+ Добавить" CTA in the garage; back arrow and "+" on the car page. The car page splits stage and ledger `minmax(340px, 3fr) 5fr` at ≥1280px.
 
 The dialog overlay centers at ≥561px (24px padding gutter, 560px max-width). At ≤560px it drops to a bottom sheet: aligned to viewport bottom, 90vh max-height, top-only rounded corners (`16px 16px 0 0`), and two-column form rows collapse to single column.
 
@@ -299,7 +295,7 @@ Mostly flat with hairline borders. Depth is conveyed by surface-color steps (pap
 - **Button Lift** (`0 1px 2px rgba(37,99,235,0.18)`): a tinted 1px shadow under primary CTAs. Hints at the accent beneath the button rather than general elevation.
 
 ### Named Rules
-**The Flat-On-Paper Rule.** The default surface is flat. The rail, the empty slot, the status line, inputs — none carry shadows. Elevation is awarded only to things that genuinely float: the dialog, the selected toggle pill, the focused CTA.
+**The Flat-On-Paper Rule.** The default surface is flat. The top row, the empty slot, the status line, inputs — none carry shadows. Elevation is awarded only to things that genuinely float: the dialog, the selected toggle pill, the focused CTA.
 
 **The Hairline Rule.** Separation uses 1px `line` or 1.5px `line-strong` borders, dashed in `line-dash` only for the empty-slot and the step-dot default. Never a shadow where a hairline will do.
 
@@ -325,24 +321,28 @@ Dashed borders are reserved: the empty slot (1.5px dashed `line-dash`) and the e
 
 ### Inputs / Fields
 - **Text input & select** (height 42px, 12px horizontal padding, 1px `line-strong` border, 8px radius, `card` background, 14px body type, -0.005em tracking): the default field.
-- **Placeholder:** `faint`.
+- **Placeholder:** `muted`.
 - **Focus:** border shifts to `accent`; 3px soft accent glow (`color-mix(accent 15%, transparent)`) outside the border. No default browser outline.
 - **Invalid:** border shifts to `danger`; 3px soft `danger` glow (`color-mix 12%`). Inline error (`font-size: 12px`, `color: danger`, `font-weight: 500`) placed directly under the field, wired via `aria-describedby`.
 - **Select:** authored CSS-gradient chevron at the right edge (two 4×4 linear gradients forming a muted downward caret). Never a native OS triangle.
 - **Hint:** 12px `muted` text under the field, replaced by the error when invalid.
-- **Label:** 13px, 500 weight, `ink`. Optional fields append a 12px `faint` "опционально" tag inside the label row.
+- **Label:** 13px, 500 weight, `ink`. Optional fields append a 12px `muted` "опционально" tag inside the label row.
 
 ### Units Toggle (signature atom)
 A pill-grouped radio: 42px tall track in `line`-tinted translucent background with 3px internal padding, two flex-equal buttons with 6px inner radius. Selected button rises to `card` background with `shadow-sm` and 600 weight. Semantics are proper `role="radiogroup"` + `role="radio"` + `aria-checked`.
 
-### Navigation (left rail)
-- **Style:** vertical list, 2px gap between items, 8×10px padding, 8px radius, 18×18px icon slot.
-- **Default:** `body` text, `muted` icon.
-- **Hover:** `line`-tinted background (`color-mix 60%`), `ink` text.
-- **Active** (`aria-current="page"`): `accent-soft` background, `accent` text and icon.
-- **Not built yet** (`aria-disabled="true"`, tooltip "В разработке"): `faint` text and icon, no hover wash, default cursor. No "скоро" tag — the rail stays narrow.
-- **Brand lockup:** 28×28 ink-filled rounded square carrying a lowercase "c" at 700/15px, paired with a two-line name/subtitle. Rail-foot carries a mono micro version chip in `muted` (AA on card).
-- **Mobile top bar:** reduced brand (mark + single-line name at 13px) and a compact primary CTA. 12×16px padding, bottom hairline.
+### Top Row (navigation)
+- **Brand:** 28×28 ink-filled rounded square carrying a lowercase "c" at 700/15px, then "carfolio" at 16/600. No subtitle.
+- **Garage mark:** the garage icon (house with a sectional door) right after the brand. Below the garage it is a link "В гараж" (36px target, `line` wash on hover); on the garage itself it is a non-interactive "you are here" sign in `ink` with `aria-current="page"`.
+- **Help:** a "?" icon button, top right, opens the "Как устроен carfolio" story.
+- **Settings (not built):** a 16px gear in `faint`, `role="img"` labelled "Настройки — скоро", with a small 10px `body`-on-`line` "скоро" pill overlapping its top-right corner. No settings screen exists yet; nothing pretends it does.
+- **Version:** mono micro tag in `muted`, bottom-right corner of the page.
+
+### Car Card (garage)
+White card, 16px radius, `line` hairline, 20px padding: name (16/600), meta line (year · fuel · engine), the mileage as a mono figure (or a quiet 13px `muted` "Пробег не указан" when unknown — never a fake number), and a footer under a hairline carrying the car's state, not its bookkeeping: the worst-status pill (same rollup as the systems) and one `muted` line — the names of parts needing attention, worst first; or "Отслеживается N деталей"; or "Ресурс деталей не задан"; or, for a new car, "Добавьте первую замену". The whole card is one button.
+
+### Intro Story (first run)
+A dialog "Как устроен carfolio", max-width 800px: four pages, each a short plain-language text (mono counter "N из 4", 20/600 title, 14px body up to 58ch) beside an illustration well (`line` 35% wash, 12px radius) holding a live fragment of the real UI labelled "пример" — status pills, a resource bar, the odometer, a carried-over cost field. Footer: grey "Пропустить" on the left (on the last page, the hint "Открыть рассказ снова можно значком «?» вверху"), page dots, "Назад", primary "Далее" / "Понятно". Opens by itself once, on the first visit to an empty garage; reopens from "?". Dismissal persists in localStorage. On phones it is a bottom sheet with the illustration above the text. Only "Страница N из 4: title" is announced on page change.
 
 ### Cards / Empty Slot
 - **Corner Style:** 16px radius (`--r-lg`).
@@ -371,7 +371,7 @@ The illustration's viewBox is cropped to the drawn car (22px pad), so the car fi
 Lives in the stage under the mileage. Title "Требует внимания" with a mono count chip, then up to 5 rows (critical before attention, lowest resource first) and "Показать ещё N". Each row: name, "система · остаток" in 12px `muted`, pill on the right; clicking opens the system and flashes the component. When nothing is due: one `muted` line, no illustration.
 
 ### Component Sheet
-Right-hand sheet (bottom sheet on phones), `card-raised`, Shadow Lg, 24×28px padding, sections divided by hairlines: status + one-line remainder, the Figure percentage beside an 8px bar with the caption that this is a forecast, a facts list (Установлено / Ресурс / Прошло, 96px label column), an inline resource form when life is missing, last inspection, history, and a sticky footer with the primary "Добавить запись" and, for replaceable parts, a ghost "Заменено сегодня" that logs a replacement at today's date and current mileage with the same life in one tap, then offers "Отменить" in its place. Life by time is entered as a number plus a unit (дн. / мес. / лет) and stored as days. Initial focus is the sheet itself, not the close button.
+Right-hand sheet (bottom sheet on phones), `card-raised`, Shadow Lg, 24×28px padding, sections divided by hairlines: status + one-line remainder, the Figure percentage beside an 8px bar with the caption that this is a forecast, a facts list (Установлено / Ресурс / Прошло, 96px label column), an inline resource form when life is missing, last inspection, history, and a sticky footer with the primary "+ Добавить запись" and, when the part has a previous replacement, a ghost "Повторить замену". That opens the record dialog in repeat mode: title "Замена: <деталь>", subtitle "Прошлая замена — <дата>", type, component and resource collapsed into one summary line with "Изменить", date and mileage set to today, and cost and notes copied from the last replacement — each copied field tinted with a 5% accent wash and captioned "* Цену/Заметку взяли от прошлой замены" until edited; focus starts on the cost. The sheet stays open beside the dialog (the dialog adds no second scrim and centres in the space left of the sheet) so the history is there to check against. Life by time is entered as a number plus a unit (дн. / мес. / лет) and stored as days. Initial focus is the sheet itself, not the close button.
 
 ### Destructive Confirmation
 Used for deleting a car and deleting a record. At rest: a quiet `muted` text link ("Удалить автомобиль", "Удалить запись") that turns `danger-ink` on hover. On click it becomes an inline block in place, never a second modal: a 6% danger wash with a 30% danger hairline (12px radius), a 600 title naming the object ("Удалить эту запись?"), one sentence on what else changes ("Ресурс снова будет считаться от прошлой замены…"), "Отменить это нельзя.", and two buttons, ghost "Не удалять" (focused on open, so Enter is safe) and a solid `danger-ink` button that repeats the action and its object.
@@ -383,7 +383,7 @@ Two step pills on a hairline rule. Each step is `[circle, label]`. The default `
 A hairline-separated footer composed of a 6px dot (`line-dash` default; reserved to drive to `ok`/`warn`/`danger` on populated surfaces), mono text at 12px `muted`, a bold `ink` count, and a `·` separator in `line-dash`. Hairline top border in `line`, 16px top padding.
 
 ### Icon System
-Authored SVG only. Base: 24×24 viewBox, `stroke="currentColor"`, `strokeWidth: 1.75`, round joins and caps, no fills. Icons inherit the surrounding text color, so they tint through nav-item state, focus, hover, and primary-button context without per-icon rules. Default render size is 18–20px in-chrome, 16px on buttons, 22px inside the empty-slot plus ring.
+Authored SVG only. Base: 24×24 viewBox, `stroke="currentColor"`, `strokeWidth: 1.75`, round joins and caps, no fills. Icons inherit the surrounding text color, so they tint through tool-button state, focus, hover, and primary-button context without per-icon rules. Default render size is 18–20px in-chrome, 16px on buttons, 22px inside the empty-slot plus ring.
 
 ### Success Card
 A tinted confirmation strip inside the dialog: `color-mix(ok 10%, card)` background, `color-mix(ok 40%, line)` 1px border, 8px radius, 10×14px padding, 13px `ink` text, 18px `ok` check icon at the left.
@@ -417,6 +417,6 @@ A tinted confirmation strip inside the dialog: `color-mix(ok 10%, card)` backgro
 <!-- Notes on brief→build drift (shipped values are canonical):
 - `--fs-md` is 16px (not 15px); subtitle role carries at 16/600.
 - Dialog max-width is 560px (brief phrasing varied); bottom sheet triggers at ≤560px.
-- Grid is 3-up desktop with a 2-up band at 821–1100px before collapsing to 1-up ≤820px.
+- Garage grid is auto-fill 300–360px tracks; 1-up ≤820px. The side rail and header CTA from the original brief were removed by the owner (2026-10-31).
 - Status-dot default is `line-dash`; semantic colors (`ok`/`warn`/`danger`) are defined but intentionally not spent on the empty-garage surface.
 - Not canonized: no device-specific or marketing patterns were invented; the system records only what the build reuses. -->

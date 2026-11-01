@@ -294,7 +294,7 @@ export function CostFields({
         {error ? (
           <span className={s.error} id="ar-cost-error">{error}</span>
         ) : carried ? (
-          <span className={s.carriedHint} id="ar-cost-carried">* Цену взяли от прошлой замены</span>
+          <span className={s.carriedHint} id="ar-cost-carried">* Стоимость рассчитана по данным прошлой замены</span>
         ) : null}
       </div>
       <div className={s.field}>
@@ -342,7 +342,7 @@ export function NotesField({ isNote, value, onChange, carried, error }: NotesPro
         <span className={s.error} id="ar-notes-error">{error}</span>
       ) : carried ? (
         <span className={s.carriedHint} id="ar-notes-carried">
-          * Заметку взяли от прошлой замены
+          * Заметку подставили из прошлой замены
         </span>
       ) : null}
     </div>

@@ -1,0 +1,271 @@
+/* Systems ledger and attention list on the car page. */
+
+/* ─── Systems: one card, one hairline row per system ─── */
+.systemList {
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.system {
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 16px;
+  transition: background-color 300ms ease;
+}
+.system:first-child { border-top: 0; }
+
+.systemHeading { font: inherit; }
+
+.systemHead {
+  width: 100%;
+  display: grid;
+  /* Same right-hand tracks as .compRow: bars and pills line up down the list. */
+  grid-template-columns: 36px minmax(0, 1fr) 128px 16px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+.systemHead:hover { background: color-mix(in srgb, var(--line) 30%, transparent); }
+.systemHead:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--r-lg);
+}
+
+.systemIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+  color: var(--body);
+}
+
+.systemTitle { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.systemName {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.systemCount {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.systemHead[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+.systemBody {
+  padding: 0 16px 14px 66px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Component rows ─── */
+.compList { list-style: none; border-top: 1px solid var(--line); }
+
+.compItem { border-bottom: 1px solid var(--line); scroll-margin-top: 24px; }
+
+/* The whole row opens the component panel. */
+.compRow {
+  display: grid;
+  /* Fixed resource and pill tracks keep bars aligned from row to row. */
+  /* Trailing 16px mirrors the chevron column of .systemHead. */
+  grid-template-columns: minmax(0, 1fr) 196px 128px 16px;
+  align-items: center;
+  gap: 14px;
+  width: calc(100% + 16px);
+  padding: 10px 8px;
+  margin: 2px -8px;
+  text-align: left;
+  border-radius: var(--r-sm);
+  transition: background-color 160ms ease;
+}
+.compRow:hover { background: color-mix(in srgb, var(--line) 35%, transparent); }
+.compRow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.compMain { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.compName {
+  font-weight: 500;
+  font-size: var(--fs-base);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.metaOver { color: var(--danger-ink); font-weight: 500; }
+.compMeta {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bar on top at a fixed width, its numbers and words underneath, left-aligned to it.
+   Only the bar takes height, so the row centres the bar itself, level with the pill;
+   the text hangs below it. */
+.resource {
+  position: relative;
+  min-width: 0;
+}
+.resource .resourceText {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+}
+.resourceText {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.resourceBar {
+  height: 6px;
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.resourceFill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 320ms ease, background-color 160ms ease;
+}
+.rf-ok { background: var(--ok); }
+.rf-attention { background: var(--warn); }
+.rf-critical { background: var(--danger); }
+.rf-unknown { background: var(--line-dash); }
+.resourcePct { font-size: var(--fs-xs); font-weight: 600; color: var(--ink); }
+
+.compPill, .pillCell { justify-self: start; display: flex; }
+
+/* Narrow ledger: resource drops under the name, pill stays on the first line. */
+@container (max-width: 560px) {
+  .systemHead { grid-template-columns: 36px minmax(0, 1fr) auto 16px; gap: 12px; }
+  .pillCell { justify-self: end; }
+  .systemBody { padding-left: 16px; }
+  .compRow { grid-template-columns: minmax(0, 1fr) auto 16px; gap: 6px 12px; }
+  .compPill { grid-column: 2; grid-row: 1; }
+  .resource { grid-column: 1 / 3; grid-row: 2; display: flex; flex-direction: column; gap: 6px; }
+  .resource .resourceText { position: static; }
+  .compPill { justify-self: end; }
+}
+
+/* Landing spot after jumping from the car or the attention list. */
+.flash { background: var(--accent-soft); }
+
+/* ─── Add component ─── */
+.addLink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: color 120ms ease;
+}
+.addLink:hover { color: var(--accent); }
+.addLink svg { width: 14px; height: 14px; }
+
+.addSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1.5px dashed var(--line-dash);
+  border-radius: var(--r-md);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+.addSlot:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.addSlot svg { width: 16px; height: 16px; }
+
+.addLink:focus-visible,
+.addSlot:focus-visible,
+.attentionItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ─── Attention list ─── */
+.attention { display: flex; flex-direction: column; gap: 6px; }
+
+.attentionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.attentionCount {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--body);
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.attentionList { list-style: none; display: flex; flex-direction: column; margin: 0 -10px; }
+
+.attentionItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+.attentionItem:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
+
+.attentionMain { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.attentionName {
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attentionMeta {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attentionEmpty { font-size: var(--fs-sm); color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .system, .compRow, .chevron { transition: none; }
+}
