@@ -426,7 +426,7 @@ function digitGroups(n: number) {
 		));
 }
 
-const openKey = (vehicleId: string) => `carfolio.car.${vehicleId}.open`;
+const openKey = (vehicleId: string) => `carvisio.car.${vehicleId}.open`;
 
 function ratioOf(row: ComponentRow): number {
 	return row.resource.kind === "known" ? row.resource.ratio : 1;

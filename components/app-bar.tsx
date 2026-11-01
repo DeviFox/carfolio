@@ -5,7 +5,7 @@ import { GarageIcon, HelpIcon, SettingsIcon } from "./icons";
 type Props = {
   // Below the garage the garage icon is the way home; on the garage it marks where you are.
   home?: boolean;
-  // Opens the "how carfolio works" story.
+  // Opens the "how carvisio works" story.
   onHelp?: () => void;
 };
 
@@ -16,7 +16,7 @@ export default function AppBar({ home, onHelp }: Props) {
     <div className={styles.appBar}>
       <nav className={styles.brand} aria-label="Разделы">
         <span className={styles.brandMark} aria-hidden="true">c</span>
-        <span className={styles.brandName}>carfolio</span>
+        <span className={styles.brandName}>carvisio</span>
         {/* Next to the brand, where the eye starts: the way back to the garage. */}
         {home ? (
           <Link href="/" className={styles.toolBtn} aria-label="В гараж" title="В гараж">

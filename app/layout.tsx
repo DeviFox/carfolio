@@ -4,7 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "carfolio — визуальный гараж",
+  title: "carvisio — состояние автомобиля под контролем",
   description:
     "История обслуживания и напоминания о регламенте для вашего автомобиля — на основе того, что знаете вы, не производитель.",
 };

@@ -1,5 +1,5 @@
 ---
-name: carfolio
+name: carvisio
 description: Визуальный гараж — a quiet SaaS surface for owners to keep the service story of their own cars.
 colors:
   surface: "#f8fafc"
@@ -186,19 +186,19 @@ components:
     padding: "28px 32px 24px"
 ---
 
-# Design System: carfolio
+# Design System: carvisio
 
 ## Overview
 
 **Creative North Star: "The Quiet Service Ledger"**
 
-Carfolio is a working surface, not a showroom. It takes the restrained-SaaS craft bar — Linear's spatial economy, Vercel-flavored Rauno precision, Apple Health & Fitness's clinical calm — and bends it toward a car owner's maintenance ledger. The world is white paper under a soft slate ink, with a single blue accent reserved for the one next thing to do. Nothing is loud; the garage speaks only when the owner adds, confirms, or needs to notice state. Density is medium: whitespace carries the composition and type does the hierarchy, no decorative devices.
+Carvisio is a working surface, not a showroom. It takes the restrained-SaaS craft bar — Linear's spatial economy, Vercel-flavored Rauno precision, Apple Health & Fitness's clinical calm — and bends it toward a car owner's maintenance ledger. The world is white paper under a soft slate ink, with a single blue accent reserved for the one next thing to do. Nothing is loud; the garage speaks only when the owner adds, confirms, or needs to notice state. Density is medium: whitespace carries the composition and type does the hierarchy, no decorative devices.
 
 The surface treats emptiness as a structural fact, not a marketing moment. An empty garage shows exactly one dashed cell at the geometry a future car card will occupy — the collection begins pre-populated with its own shape.
 
 Once a car exists, the car is the index. The isometric illustration stays in view beside a collapsible ledger of systems, and state is spent precisely and only where it is true: status pills, resource bars, zone badges on the car. Unknown is a first-class, quiet grey state — never a fabricated percentage.
 
-The anti-reference is enthusiast marketing: hero imagery, glossy chrome, aggressive gradients, dark glass. Carfolio is for the owner between oil changes, not the buyer at the dealership.
+The anti-reference is enthusiast marketing: hero imagery, glossy chrome, aggressive gradients, dark glass. Carvisio is for the owner between oil changes, not the buyer at the dealership.
 
 **Key Characteristics:**
 - Paper-slate neutral surface, one blue accent, three state colors spent only on state surfaces
@@ -270,7 +270,7 @@ A near-white paper surface with a slate ink ramp, a single confident blue accent
 
 ## Layout
 
-There is no side rail and no header bar. Desktop (≥821px) is one column: a slim top row sits in the page's top margin (16px 40px 0, no background, no hairline) with the brand ("c" mark + "carfolio") and the garage mark on the left, and the "?" help icon and the inert settings gear on the right. The main column follows with 16px top and 40px side padding and runs to `min(100%, 1600px)`. The version tag sits in the page's bottom-right corner, at the end of the content.
+There is no side rail and no header bar. Desktop (≥821px) is one column: a slim top row sits in the page's top margin (16px 40px 0, no background, no hairline) with the brand ("c" mark + "carvisio") and the garage mark on the left, and the "?" help icon and the inert settings gear on the right. The main column follows with 16px top and 40px side padding and runs to `min(100%, 1600px)`. The version tag sits in the page's bottom-right corner, at the end of the content.
 
 The garage grid is `repeat(auto-fill, minmax(300px, 360px))` with a 24px gutter: cards keep a card's size and wider screens fit more of them rather than stretching them. There is no header add button on desktop; the dashed slot at the end of the grid is the add action. At ≤820px the top row is replaced by a mobile top bar (card background, 12×16px padding, bottom hairline): brand, "?" and the compact "+ Добавить" CTA in the garage; back arrow and "+" on the car page. The car page splits stage and ledger `minmax(340px, 3fr) 5fr` at ≥1280px.
 
@@ -332,9 +332,9 @@ Dashed borders are reserved: the empty slot (1.5px dashed `line-dash`) and the e
 A pill-grouped radio: 42px tall track in `line`-tinted translucent background with 3px internal padding, two flex-equal buttons with 6px inner radius. Selected button rises to `card` background with `shadow-sm` and 600 weight. Semantics are proper `role="radiogroup"` + `role="radio"` + `aria-checked`.
 
 ### Top Row (navigation)
-- **Brand:** 28×28 ink-filled rounded square carrying a lowercase "c" at 700/15px, then "carfolio" at 16/600. No subtitle.
+- **Brand:** 28×28 ink-filled rounded square carrying a lowercase "c" at 700/15px, then "carvisio" at 16/600. No subtitle.
 - **Garage mark:** the garage icon (house with a sectional door) right after the brand. Below the garage it is a link "В гараж" (36px target, `line` wash on hover); on the garage itself it is a non-interactive "you are here" sign in `ink` with `aria-current="page"`.
-- **Help:** a "?" icon button, top right, opens the "Как устроен carfolio" story.
+- **Help:** a "?" icon button, top right, opens the "Как устроен carvisio" story.
 - **Settings (not built):** a 16px gear in `faint`, `role="img"` labelled "Настройки — скоро", with a small 10px `body`-on-`line` "скоро" pill overlapping its top-right corner. No settings screen exists yet; nothing pretends it does.
 - **Version:** mono micro tag in `muted`, bottom-right corner of the page.
 
@@ -342,7 +342,7 @@ A pill-grouped radio: 42px tall track in `line`-tinted translucent background wi
 White card, 16px radius, `line` hairline, 20px padding: name (16/600), meta line (year · fuel · engine), the mileage as a mono figure (or a quiet 13px `muted` "Пробег не указан" when unknown — never a fake number), and a footer under a hairline carrying the car's state, not its bookkeeping: the worst-status pill (same rollup as the systems) and one `muted` line — the names of parts needing attention, worst first; or "Отслеживается N деталей"; or "Ресурс деталей не задан"; or, for a new car, "Добавьте первую замену". The whole card is one button.
 
 ### Intro Story (first run)
-A dialog "Как устроен carfolio", max-width 800px: four pages, each a short plain-language text (mono counter "N из 4", 20/600 title, 14px body up to 58ch) beside an illustration well (`line` 35% wash, 12px radius) holding a live fragment of the real UI labelled "пример" — status pills, a resource bar, the odometer, a carried-over cost field. Footer: grey "Пропустить" on the left (on the last page, the hint "Открыть рассказ снова можно значком «?» вверху"), page dots, "Назад", primary "Далее" / "Понятно". Opens by itself once, on the first visit to an empty garage; reopens from "?". Dismissal persists in localStorage. On phones it is a bottom sheet with the illustration above the text. Only "Страница N из 4: title" is announced on page change.
+A dialog "Как устроен carvisio", max-width 800px: four pages, each a short plain-language text (mono counter "N из 4", 20/600 title, 14px body up to 58ch) beside an illustration well (`line` 35% wash, 12px radius) holding a live fragment of the real UI labelled "пример" — status pills, a resource bar, the odometer, a carried-over cost field. Footer: grey "Пропустить" on the left (on the last page, the hint "Открыть рассказ снова можно значком «?» вверху"), page dots, "Назад", primary "Далее" / "Понятно". Opens by itself once, on the first visit to an empty garage; reopens from "?". Dismissal persists in localStorage. On phones it is a bottom sheet with the illustration above the text. Only "Страница N из 4: title" is announced on page change.
 
 ### Cards / Empty Slot
 - **Corner Style:** 16px radius (`--r-lg`).

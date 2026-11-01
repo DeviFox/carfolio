@@ -18,7 +18,7 @@ Secondary audience: owners who care about a durable record of replacements, repa
 
 ## Product Purpose
 
-Carfolio is a **visual garage**: a personal, cinematic view of one car at a time that doubles as the primary navigation into its maintenance history and upcoming work. It replaces spreadsheets and generic maintenance catalogs with a view of *this* car, where the car itself surfaces what is known, what is due, and what has been done.
+Carvisio is a **visual garage**: a personal, cinematic view of one car at a time that doubles as the primary navigation into its maintenance history and upcoming work. It replaces spreadsheets and generic maintenance catalogs with a view of *this* car, where the car itself surfaces what is known, what is due, and what has been done.
 
 Success: an owner opens the garage, understands the state of their car at a glance, logs new work in seconds, and trusts the reminders the app surfaces.
 
@@ -84,10 +84,10 @@ Explicitly NOT in MVP (per spec, do not fabricate):
 
 ## Brand Commitments
 
-- **Name:** carfolio.
+- **Name:** carvisio.
 - **Visual direction (standing preference):** the category-standard clean SaaS, played straight. No ironic treatment, no smuggled quirk. Taken by the owner as the canon exit on the first visual-direction round (2026-10-27).
 - **Craft bar:** Linear, Vercel (Rauno-style dashboards), Apple Health / Fitness. The finished build is judged against the finish, typographic discipline, state-system clarity, and empty-state treatment these products ship. "Fine for a SaaS tool" is below the bar; "indistinguishable from Linear-tier dashboards" is at it.
-- **User-pinned reference:** an owner-provided reference image (chat attachment, 2026-10-27) sets the compositional baseline — left sidebar nav; content area with header + card list; colored progress rings for per-system state (used on single-car view, not on empty garage); modal-based "Добавить автомобиль" flow with a 2-step indicator "Основные данные / Дополнительно". The reference uses placeholder brand "AutoGlow"; the real brand stays carfolio.
+- **User-pinned reference:** an owner-provided reference image (chat attachment, 2026-10-27) sets the compositional baseline — left sidebar nav; content area with header + card list; colored progress rings for per-system state (used on single-car view, not on empty garage); modal-based "Добавить автомобиль" flow with a 2-step indicator "Основные данные / Дополнительно". The reference uses placeholder brand "AutoGlow"; the real brand stays carvisio.
 - **Open: display face and primary accent.** Not pinned. Default working picks: Geist / Inter for UI type, project blue for primary accent. Replaceable without renegotiating the direction.
 - No logos, voice guide, or binding factual claims have been provided yet. Do not fabricate dealer names, service stations, testimonials, prices, or customer logos.
 

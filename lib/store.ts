@@ -24,6 +24,7 @@ import {
   kindForNewComponent,
   retiredBy,
 } from "./records";
+import { moveLegacyStorage } from "./legacy-storage";
 
 export type { AddRecordInput, AddRecordResult, EventPatch };
 
@@ -473,9 +474,12 @@ export const useGarage = create<GarageState>()(
       reset: () => set(emptyGarage()),
     }),
     {
-      name: "carfolio.garage.v1",
+      name: "carvisio.garage.v1",
       version: SCHEMA_VERSION,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        moveLegacyStorage(localStorage);
+        return localStorage;
+      }),
       migrate: (persisted, from) => {
         if (from === SCHEMA_VERSION) return persisted as GarageData;
         return { ...emptyGarage(), ...(persisted as object) };

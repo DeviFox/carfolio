@@ -6,9 +6,9 @@ import d from "./dialog.module.css";
 import StatusPill from "./status-pill";
 import { useModal } from "@/lib/use-modal";
 
-// First-run story about the few ideas carfolio rests on, as a modal: opens by
+// First-run story about the few ideas carvisio rests on, as a modal: opens by
 // itself on the first visit to an empty garage, and from "как это работает".
-const STORAGE_KEY = "carfolio.intro.dismissed";
+const STORAGE_KEY = "carvisio.intro.dismissed";
 
 export function introDismissed(): boolean {
   try {
@@ -44,7 +44,7 @@ const PAGES: Page[] = [
   {
     title: "Запишите замену — остальное посчитаем",
     body:
-      "Укажите дату, пробег и ресурс детали — например, 30 000 км или 2 года. Carfolio рассчитает остаток и подскажет, когда пора задуматься о замене.",
+      "Укажите дату, пробег и ресурс детали — например, 30 000 км или 2 года. Carvisio рассчитает остаток и подскажет, когда пора задуматься о замене.",
     art: (
       <div className={s.part}>
         <div className={s.partHead}>
@@ -107,7 +107,7 @@ export default function IntroCard({ onClose }: { onClose: () => void }) {
       aria-labelledby={titleId}
       onKeyDown={(e) => trapTab(e, dialogRef.current)}
     >
-      <h2 id={titleId} className="sr-only">Как устроен carfolio</h2>
+      <h2 id={titleId} className="sr-only">Как устроен carvisio</h2>
 
       {/* Announce only where the reader is, not the whole page again. */}
       <p className="sr-only" aria-live="polite">

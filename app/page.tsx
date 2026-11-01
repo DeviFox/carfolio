@@ -16,7 +16,7 @@ export default function Page() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  // The story about how carfolio works, until the owner dismisses it.
+  // The story about how carvisio works, until the owner dismisses it.
   const [showIntro, setShowIntro] = useState(false);
   // Opened by itself (not from "?"): on close, focus goes to the next step, adding a car.
   const introAuto = useRef(false);
@@ -114,7 +114,7 @@ export default function Page() {
         <header className={styles.topBar}>
           <div className={styles.topBrand}>
             <div className={styles.brandMark} aria-hidden="true">c</div>
-            <div className={styles.brandName}>carfolio</div>
+            <div className={styles.brandName}>carvisio</div>
           </div>
           <div className={styles.topActions}>
             <button type="button" className={styles.toolBtn} onClick={() => setShowIntro(true)} aria-label="Как это работает">
@@ -228,7 +228,7 @@ export default function Page() {
             <strong>{hydrated ? vehicles.length : 0}</strong>
             {plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
             <span className={styles.sep}>·</span>
-            <span className={styles.statusNote}>Пока Carfolio хранит данные в вашем браузере. В будущем добавим аккаунты и синхронизацию, чтобы пользоваться приложением с разных устройств.</span>
+            <span className={styles.statusNote}>Пока Carvisio хранит данные в вашем браузере. В будущем добавим аккаунты и синхронизацию, чтобы пользоваться приложением с разных устройств.</span>
           </div>
         </main>
         <VersionTag />
