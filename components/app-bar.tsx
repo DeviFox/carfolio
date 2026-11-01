@@ -44,5 +44,5 @@ export default function AppBar({ home, onHelp }: Props) {
 }
 
 export function VersionTag() {
-  return <div className={styles.version}>v0.0.7 beta</div>;
+  return <div className={styles.version}>v0.1.0 beta</div>;
 }
