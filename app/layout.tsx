@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { YandexMetrika } from "@/components/yandex-metrika";
+import { GoogleTag } from "@/components/google-tag";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body>
         {children}
         <YandexMetrika />
+        <GoogleTag />
       </body>
     </html>
   );
