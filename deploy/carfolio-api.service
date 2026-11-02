@@ -1,0 +1,28 @@
+[Unit]
+Description=Carvisio API
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+User=carfolio
+Group=carfolio
+WorkingDirectory=/opt/carfolio
+EnvironmentFile=/etc/carfolio/api.env
+ExecStart=/opt/carfolio/carfolio-api
+Restart=on-failure
+RestartSec=2
+
+# Hardening: the service only needs to talk to Postgres and listen on localhost.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

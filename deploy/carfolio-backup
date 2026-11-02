@@ -1,0 +1,39 @@
+#!/bin/sh
+# Daily encrypted Postgres backup, run by cron as root.
+#
+# 1. pg_dump (custom format) → encrypted with gpg → /var/backups/carfolio
+# 2. local copies older than 14 days are deleted
+# 3. the directory is mirrored to the reg.ru hosting over FTPS
+#    (remote copies follow the local ones, so they are pruned too)
+#
+# Settings live in /etc/carfolio/backup.env (see setup.sh). Without FTP
+# settings only the local copy is kept.
+#
+# Restore:
+#   gpg -d carfolio-YYYYmmdd-HHMM.dump.gpg > db.dump
+#   sudo -u postgres pg_restore --clean --if-exists -d carfolio db.dump
+set -eu
+
+. /etc/carfolio/backup.env
+
+DIR=/var/backups/carfolio
+FILE="$DIR/carfolio-$(date -u +%Y%m%d-%H%M).dump.gpg"
+mkdir -p "$DIR"
+chmod 700 "$DIR"
+
+sudo -u postgres pg_dump -Fc carfolio |
+    gpg --batch --yes --symmetric --cipher-algo AES256 \
+        --passphrase-file /etc/carfolio/backup.passphrase -o "$FILE"
+
+find "$DIR" -name 'carfolio-*.dump.gpg' -mtime +14 -delete
+
+if [ -n "${FTP_HOST:-}" ]; then
+    lftp -u "$FTP_USER,$FTP_PASS" "ftp://$FTP_HOST" -e "
+        set ftp:ssl-force true;
+        set ssl:verify-certificate yes;
+        mkdir -pf $FTP_DIR;
+        mirror -R --delete --only-newer $DIR $FTP_DIR;
+        quit"
+fi
+
+echo "backup ok: $FILE"

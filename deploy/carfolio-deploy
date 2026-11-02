@@ -1,0 +1,38 @@
+#!/bin/sh
+# Installs a new API binary uploaded by GitHub Actions and restarts the
+# service. Runs as root via sudo; the deploy user may run only this script.
+# If the new binary does not become healthy, the previous one is restored.
+set -eu
+
+UPLOAD=/home/deploy/carfolio-api.new
+DIR=/opt/carfolio
+
+[ -f "$UPLOAD" ] || { echo "no uploaded binary at $UPLOAD" >&2; exit 1; }
+
+install -o root -g root -m 755 "$UPLOAD" "$DIR/carfolio-api.new"
+rm -f "$UPLOAD"
+[ -f "$DIR/carfolio-api" ] && cp -p "$DIR/carfolio-api" "$DIR/carfolio-api.prev"
+mv "$DIR/carfolio-api.new" "$DIR/carfolio-api"
+
+healthy() {
+    for _ in $(seq 1 20); do
+        curl -fsS -o /dev/null http://127.0.0.1:8080/healthz && return 0
+        sleep 1
+    done
+    return 1
+}
+
+systemctl restart carfolio-api
+if healthy; then
+    echo "deployed, healthy"
+    exit 0
+fi
+
+echo "new binary is not healthy, logs:" >&2
+journalctl -u carfolio-api -n 40 --no-pager >&2 || true
+if [ -f "$DIR/carfolio-api.prev" ]; then
+    echo "rolling back to previous binary" >&2
+    mv "$DIR/carfolio-api.prev" "$DIR/carfolio-api"
+    systemctl restart carfolio-api
+fi
+exit 1
