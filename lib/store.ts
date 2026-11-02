@@ -60,6 +60,11 @@ interface GarageState extends GarageData {
   addComponent: (input: AddComponentInput) => Component;
   updateComponent: (id: ID, patch: Partial<Component>) => void;
   archiveComponent: (id: ID) => void;
+  // Returns an error message, or null when the name was saved.
+  renameComponent: (id: ID, name: string) => string | null;
+  // Removes a component and everything recorded only for it: its parts,
+  // inspections, reminders and the records that touch no other component.
+  deleteComponent: (id: ID) => void;
 
   addInstalledPart: (input: AddInstalledPartInput) => InstalledPart;
 
@@ -196,6 +201,49 @@ export const useGarage = create<GarageState>()(
             c.id === id ? { ...c, isArchived: true } : c,
           ),
         }));
+      },
+
+      renameComponent: (id, raw) => {
+        const name = raw.trim().replace(/\s+/g, " ");
+        if (!name) return "Укажите название.";
+        if (name.length > 80) return "Слишком длинное название.";
+        const st = get();
+        const component = st.components.find((c) => c.id === id);
+        if (!component) return "Деталь не найдена.";
+        if (name === component.name) return null;
+        const siblings = st.components.filter(
+          (c) => c.id !== id && c.vehicleId === component.vehicleId,
+        );
+        if (findComponentByName(siblings, name, component.systemId)) {
+          return "Такая деталь уже есть в этой системе.";
+        }
+        set((s) => ({
+          components: s.components.map((c) => (c.id === id ? { ...c, name } : c)),
+        }));
+        return null;
+      },
+
+      deleteComponent: (id) => {
+        set((s) => {
+          const partIds = new Set(
+            s.installedParts.filter((p) => p.componentId === id).map((p) => p.id),
+          );
+          const events = s.events
+            .filter((e) => !(e.componentIds.includes(id) && e.componentIds.length === 1))
+            .map((e) => {
+              if (!e.componentIds.includes(id)) return e;
+              const rest = { ...e, componentIds: e.componentIds.filter((c) => c !== id) };
+              if (e.installedPartId && partIds.has(e.installedPartId)) delete rest.installedPartId;
+              return rest;
+            });
+          return {
+            components: s.components.filter((c) => c.id !== id),
+            installedParts: s.installedParts.filter((p) => p.componentId !== id),
+            inspections: s.inspections.filter((i) => i.componentId !== id),
+            reminders: s.reminders.filter((r) => r.componentId !== id),
+            events,
+          };
+        });
       },
 
       addInstalledPart: (input) => {

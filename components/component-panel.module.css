@@ -28,7 +28,7 @@
 @keyframes slideIn { from { transform: translateX(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
 .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.titleGroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.titleGroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .title {
   font-size: var(--fs-lg);
   font-weight: 600;
@@ -37,6 +37,30 @@
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
+/* The name reads as a heading; a pencil appears on hover/focus to say it's editable. */
+.titleBtn {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  border-radius: var(--r-xs);
+  overflow-wrap: anywhere;
+}
+.titleBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.titlePencil {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: -1px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.titleBtn:hover .titlePencil,
+.titleBtn:focus-visible .titlePencil { opacity: 1; }
+@media (hover: none) { .titlePencil { opacity: 0.6; } }
+.renameField { display: flex; flex-direction: column; gap: 6px; }
+.renameInput { font-size: var(--fs-lg); font-weight: 600; padding-block: 4px; }
+
 .subtitle { font-size: var(--fs-sm); color: var(--muted); }
 
 .section {
@@ -47,6 +71,7 @@
   border-top: 1px solid var(--line);
 }
 .header + .section { padding-top: 0; border-top: 0; }
+
 
 .sectionTitle {
   display: flex;
@@ -150,6 +175,25 @@
   align-items: center;
   gap: 12px;
 }
+/* Delete stays quiet on the left; the record actions keep the right side. */
+/* Trash joins the button row with the same 8px rhythm; its own outline sets it
+   apart from the record actions, and it turns red only on hover. */
+.footer .trash {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.footer .trash:hover {
+  color: var(--danger-ink);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
+}
+.footer:has(.trash) { justify-content: flex-end; gap: 8px; }
+.footerActions { display: flex; align-items: center; gap: 8px; }
+.footerActions > button { white-space: nowrap; }
+.footerActions > button:not(:last-child) { padding-inline: 12px; }
+.confirm { flex: 1; }
 
 @media (max-width: 560px) {
   .panel {
@@ -163,7 +207,8 @@
   }
   @keyframes sheetIn { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
   .footer { bottom: -20px; margin-bottom: -20px; padding-bottom: 20px; }
-  .footer > button { flex: 1; justify-content: center; }
+  .footerActions { flex: 1; }
+  .footerActions > button { flex: 1; justify-content: center; padding-inline: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

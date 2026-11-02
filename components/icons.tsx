@@ -102,6 +102,26 @@ export function CloseIcon(p: Props) {
   );
 }
 
+export function TrashIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M4 7h16" />
+      <path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2" />
+      <path d="M6 7l.9 12.1A1 1 0 0 0 7.9 20h8.2a1 1 0 0 0 1-.9L18 7" />
+      <path d="M10 11v5M14 11v5" />
+    </svg>
+  );
+}
+
+export function PencilIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M15.5 5.5l3 3" />
+      <path d="M4 20l1-4L16.2 4.8a1.4 1.4 0 0 1 2 0l1 1a1.4 1.4 0 0 1 0 2L8 19z" />
+    </svg>
+  );
+}
+
 export function HelpIcon(p: Props) {
   return (
     <svg {...base} {...p}>
