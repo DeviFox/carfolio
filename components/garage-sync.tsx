@@ -49,22 +49,22 @@ function ImportOffer({ newCars, accountCars }: { newCars: number; accountCars: n
             </h2>
             <p className={s.subtitle} id={descId}>
               {newCars === 1
-                ? "В этом браузере есть машина, которой нет в аккаунте."
-                : `В этом браузере есть ${cars(newCars)}, которых нет в аккаунте.`}{" "}
-              В аккаунте уже {cars(accountCars)}. Если добавить, все они будут в одном гараже на любом
+                ? "На этом устройстве есть машина, которой нет в облаке."
+                : `На этом устройстве есть ${cars(newCars)}, которых нет в облаке.`}{" "}
+              В облаке уже {cars(accountCars)}. Если добавить, все они будут объеденены в одном гараже на любом
               устройстве.
             </p>
           </div>
         </div>
         <p className={s.hint}>
-          Если не добавлять, машины из браузера отложатся и вернутся сюда после выхода из аккаунта.
+          Если не добавлять, машины из устройства будут скрыты и вернутся сюда после выхода из аккаунта.
         </p>
         <div className={s.footer}>
           <button type="button" className={s.ghostBtn} onClick={() => answer(false)} disabled={busy}>
             Не добавлять
           </button>
           <button ref={addRef} type="button" className={s.primary} onClick={() => answer(true)} disabled={busy}>
-            {busy ? "Добавляем…" : "Добавить в аккаунт"}
+            {busy ? "Добавляем…" : "Добавить в облако"}
           </button>
         </div>
       </div>

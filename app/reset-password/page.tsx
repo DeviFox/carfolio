@@ -79,7 +79,7 @@ function ResetPassword() {
   return (
     <AuthShell
       title="Новый пароль"
-      subtitle="После сохранения вы войдёте в аккаунт, а на других устройствах вход сбросится."
+      subtitle="После сохранения вы выйдете со всех устройств, кроме этого."
     >
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <FormError>{formError}</FormError>

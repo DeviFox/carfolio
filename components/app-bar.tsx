@@ -52,6 +52,16 @@ export default function AppBar({ home, onHelp, bare }: Props) {
   );
 }
 
+// Page footer. The VPN note is temporary: some VPNs block the API, and a
+// failed request is otherwise invisible. Remove it once that is fixed.
 export function VersionTag() {
-  return <div className={styles.version}>v1.0.0 beta</div>;
+  return (
+    <footer className={styles.version}>
+      <p className={styles.vpnNote}>
+        Если наблюдаете проблемы в работе, попробуйте выключить VPN. Это временно, мы
+        уже исправляем.
+      </p>
+      <span className={styles.versionNumber}>v1.0.0 beta</span>
+    </footer>
+  );
 }

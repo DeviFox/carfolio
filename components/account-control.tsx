@@ -82,7 +82,7 @@ export default function AccountControl({ compact }: Props) {
       // Changes not yet on the server would be lost with the session.
       await flushBeforeLogout();
     } catch {
-      setError("Не все изменения успели сохраниться в аккаунте. Проверьте интернет и попробуйте выйти ещё раз.");
+      setError("Не все изменения успели сохраниться в облаке. Проверьте интернет и попробуйте выйти ещё раз.");
       setBusy(false);
       return;
     }
@@ -125,7 +125,6 @@ export default function AccountControl({ compact }: Props) {
             <span className={styles.whoLabel}>Вы вошли как</span>
             <span className={styles.email}>{user.email}</span>
           </div>
-          <p className={styles.note}>Гараж хранится в аккаунте: войдите на другом устройстве, и он будет там.</p>
           <button type="button" className={styles.logout} onClick={onLogout} disabled={busy}>
             {busy ? "Выходим…" : "Выйти"}
           </button>

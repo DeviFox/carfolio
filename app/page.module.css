@@ -84,10 +84,22 @@ a.toolBtn:hover, button.toolBtn:hover { background: color-mix(in srgb, var(--lin
 /* Version: quiet, in the page's bottom-right corner. */
 .version {
   margin-top: auto;
-  align-self: flex-end;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex-wrap: wrap;
   padding: 0 40px 16px;
   color: var(--muted);
   font-size: var(--fs-xs);
+}
+.vpnNote {
+  margin: 0;
+  max-width: 60ch;
+  line-height: 1.4;
+}
+.versionNumber {
+  margin-left: auto;
   font-family: var(--font-geist-mono);
   letter-spacing: 0.02em;
 }

@@ -462,8 +462,8 @@ async function importGuest(user: User, announce: boolean) {
     }
     useAuth.getState().setNotice(
       err instanceof ApiError && err.status === 0
-        ? "Не удалось перенести машины в аккаунт: нет связи с сервером. Они остаются в этом браузере, попробуем снова при следующем входе."
-        : "Не удалось перенести машины в аккаунт. Они остаются в этом браузере.",
+        ? "Не удалось перенести машины в облако: нет связи с сервером. Они остаются на этом устройстве, попробуем снова при следующем входе."
+        : "Не удалось перенести машины в облако. Они остаются на этом устройстве.",
     );
     return;
   }
@@ -485,7 +485,7 @@ async function importGuest(user: User, announce: boolean) {
   saveOutbox();
   void flush();
   await pull();
-  if (announce) useAuth.getState().setNotice("Машины из этого браузера перенесены в аккаунт.");
+  if (announce) useAuth.getState().setNotice("Машины из этого браузера перенесены в облако.");
 }
 
 function enterGuest() {
