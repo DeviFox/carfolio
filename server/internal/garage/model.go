@@ -78,6 +78,8 @@ type Component struct {
 	Name       string  `json:"name"`
 	Kind       string  `json:"kind"`
 	Fluid      *string `json:"fluid,omitempty"`
+	Axle       *string `json:"axle,omitempty"`
+	Side       *string `json:"side,omitempty"`
 	IsArchived bool    `json:"isArchived"`
 }
 
@@ -87,7 +89,7 @@ type InstalledPart struct {
 	InstalledAtMileageKm *Km     `json:"installedAtMileageKm,omitempty"`
 	InstalledAtDate      *Date   `json:"installedAtDate,omitempty"`
 	ExpectedLifeKm       *Km     `json:"expectedLifeKm,omitempty"`
-	ExpectedLifeDays     *int    `json:"expectedLifeDays,omitempty"`
+	ExpectedLifeDays     *Days   `json:"expectedLifeDays,omitempty"`
 	RemovedAtMileageKm   *Km     `json:"removedAtMileageKm,omitempty"`
 	RemovedAtDate        *Date   `json:"removedAtDate,omitempty"`
 	Notes                *string `json:"notes,omitempty"`
@@ -141,15 +143,33 @@ type Km int64
 const maxKm = 100_000_000
 
 func (k *Km) UnmarshalJSON(b []byte) error {
+	n, err := wholeNumber(b, maxKm)
+	*k = Km(n)
+	return err
+}
+
+// Days is a duration in whole days. The client lets the owner type a
+// fraction; it is rounded, not refused.
+type Days int64
+
+const maxDays = 100 * 366
+
+func (d *Days) UnmarshalJSON(b []byte) error {
+	n, err := wholeNumber(b, maxDays)
+	*d = Days(n)
+	return err
+}
+
+// wholeNumber reads a JSON number in [0, max] and rounds it.
+func wholeNumber(b []byte, max float64) (int64, error) {
 	var f float64
 	if err := json.Unmarshal(b, &f); err != nil {
-		return err
+		return 0, err
 	}
-	if math.IsNaN(f) || f < 0 || f > maxKm {
-		return errors.New("distance out of range")
+	if math.IsNaN(f) || f < 0 || f > max {
+		return 0, errors.New("number out of range")
 	}
-	*k = Km(math.Round(f))
-	return nil
+	return int64(math.Round(f)), nil
 }
 
 // Date is a calendar day, "2006-01-02". The client has stored some days as

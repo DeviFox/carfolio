@@ -2,6 +2,7 @@
 
 import s from "./car-ledger.module.css";
 import StatusPill from "./status-pill";
+import { PositionBadge } from "./position-picker";
 import { ChevronDownIcon, PlusIcon } from "./icons";
 import {
   formatKm,
@@ -164,7 +165,10 @@ function ComponentLine({
     <li id={`component-${component.id}`} className={s.compItem}>
       <button type="button" className={`${s.compRow} ${flash ? s.flash : ""}`} onClick={onOpen}>
       <div className={s.compMain}>
-        <div className={s.compName}>{component.name}</div>
+        <div className={s.compName}>
+          {component.name}
+          <PositionBadge value={component} />
+        </div>
         {installed ? <div className={`${s.compMeta} numeric`}>{installed}</div> : null}
       </div>
       <div className={s.resource}>

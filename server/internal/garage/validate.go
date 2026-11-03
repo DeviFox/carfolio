@@ -24,6 +24,8 @@ var (
 	bodyTypes        = []string{"sedan", "hatchback", "wagon", "coupe", "crossover", "suv", "pickup", "minivan", "van", "other"}
 	categories       = []string{"engine", "transmission", "brakes", "suspension", "tires", "electrical", "cooling", "body", "other"}
 	componentKinds   = []string{"consumable", "replaceable", "inspectable"}
+	axles            = []string{"front", "rear"}
+	sides            = []string{"left", "right"}
 	eventTypes       = []string{"replacement", "inspection", "repair", "fluid_service", "observation"}
 	mileageSources   = []string{"owner", "service", "estimate"}
 	conditions       = []string{"good", "worn", "critical", "unknown"}
@@ -84,14 +86,13 @@ func (g *Garage) validate(v *checker) {
 		v.text("name", x.Name, maxNameLen)
 		v.oneOf("kind", x.Kind, componentKinds)
 		v.optText("fluid", x.Fluid, maxFluidKeyLen)
+		v.optOneOf("axle", x.Axle, axles)
+		v.optOneOf("side", x.Side, sides)
 	}
 	for i, x := range g.InstalledParts {
 		v.at("upsert.installedParts[%d]", i)
 		v.id("id", x.ID)
 		v.id("componentId", x.ComponentID)
-		if x.ExpectedLifeDays != nil && *x.ExpectedLifeDays < 0 {
-			v.fail("expectedLifeDays", "negative")
-		}
 		v.optText("notes", x.Notes, maxNotesLen)
 	}
 	for i, x := range g.Events {

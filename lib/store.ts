@@ -12,11 +12,17 @@ import {
   MileageEntry,
   SCHEMA_VERSION,
   FLUIDS,
+  POSITIONED_CATEGORIES,
   Vehicle,
   VehicleSystem,
   emptyGarage,
 } from "./types";
-import { findActiveInstalledPart, findComponentByName, formatKm } from "./compute";
+import {
+  type ComponentPosition,
+  findActiveInstalledPart,
+  findComponentByName,
+  formatKm,
+} from "./compute";
 import {
   type AddRecordInput,
   type AddRecordResult,
@@ -73,6 +79,8 @@ interface GarageState extends GarageData {
   archiveComponent: (id: ID) => void;
   // Returns an error message, or null when the name was saved.
   renameComponent: (id: ID, name: string) => string | null;
+  // Returns an error message, or null when the position was saved.
+  setComponentPosition: (id: ID, position: ComponentPosition) => string | null;
   // Removes a component and everything recorded only for it: its parts,
   // inspections, reminders and the records that touch no other component.
   deleteComponent: (id: ID) => void;
@@ -226,11 +234,35 @@ export const useGarage = create<GarageState>()(
         const siblings = st.components.filter(
           (c) => c.id !== id && c.vehicleId === component.vehicleId,
         );
-        if (findComponentByName(siblings, name, component.systemId)) {
+        if (findComponentByName(siblings, name, component.systemId, component)) {
           return "Такая деталь уже есть в этой системе.";
         }
         set((s) => ({
           components: s.components.map((c) => (c.id === id ? { ...c, name } : c)),
+        }));
+        return null;
+      },
+
+      setComponentPosition: (id, position) => {
+        const st = get();
+        const component = st.components.find((c) => c.id === id);
+        if (!component) return "Деталь не найдена.";
+        const siblings = st.components.filter(
+          (c) => c.id !== id && c.vehicleId === component.vehicleId,
+        );
+        if (findComponentByName(siblings, component.name, component.systemId, position)) {
+          return "Такая деталь в этом месте уже есть.";
+        }
+        set((s) => ({
+          components: s.components.map((c) => {
+            if (c.id !== id) return c;
+            const { axle: _a, side: _s, ...rest } = c;
+            return {
+              ...rest,
+              ...(position.axle ? { axle: position.axle } : {}),
+              ...(position.side ? { side: position.side } : {}),
+            };
+          }),
         }));
         return null;
       },
@@ -415,7 +447,12 @@ export const useGarage = create<GarageState>()(
           );
           if (!system) return fail("Выберите систему автомобиля.");
           const vehicleComponents = st.components.filter((c) => c.vehicleId === vehicle.id);
-          if (findComponentByName(vehicleComponents, name, system.id)) {
+          // Position only for systems that have one, and never for fluids.
+          const positioned = POSITIONED_CATEGORIES.includes(system.category) && !input.newComponent.fluid;
+          const position = positioned
+            ? { axle: input.newComponent.axle, side: input.newComponent.side }
+            : {};
+          if (findComponentByName(vehicleComponents, name, system.id, position)) {
             return fail("Такой компонент уже есть в этой системе.");
           }
           const fluid = input.newComponent.fluid;
@@ -432,6 +469,8 @@ export const useGarage = create<GarageState>()(
             name,
             kind: fluid ? "consumable" : kindForNewComponent(input.type, !!input.resource),
             ...(fluid ? { fluid } : {}),
+            ...(position.axle ? { axle: position.axle } : {}),
+            ...(position.side ? { side: position.side } : {}),
             isArchived: false,
           };
           component = created;

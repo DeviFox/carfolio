@@ -3,6 +3,7 @@
 import { useState } from "react";
 import s from "./car-ledger.module.css";
 import StatusPill from "./status-pill";
+import { PositionBadge } from "./position-picker";
 import { resourceSummary } from "@/lib/compute";
 import type { Vehicle } from "@/lib/types";
 import type { ComponentRow } from "./system-list";
@@ -36,7 +37,10 @@ export default function AttentionList({ rows, units, onSelect }: Props) {
               <li key={row.component.id}>
                 <button type="button" className={s.attentionItem} onClick={() => onSelect(row)}>
                   <span className={s.attentionMain}>
-                    <span className={s.attentionName}>{row.component.name}</span>
+                    <span className={s.attentionName}>
+                      {row.component.name}
+                      <PositionBadge value={row.component} />
+                    </span>
                     <span className={s.attentionMeta}>
                       {row.system.name}
                       {summary ? (

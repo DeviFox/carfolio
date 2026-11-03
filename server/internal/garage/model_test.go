@@ -9,18 +9,22 @@ import (
 func TestDecodeTypes(t *testing.T) {
 	var x struct {
 		Km      Km      `json:"km"`
+		Days    Days    `json:"days"`
 		Day     Date    `json:"day"`
 		FromISO Date    `json:"fromIso"`
 		At      Instant `json:"at"`
 		AtDay   Instant `json:"atDay"`
 	}
-	in := `{"km": 1609.6, "day": "2024-10-12", "fromIso": "2024-10-12T21:00:00.000Z",
+	in := `{"km": 1609.6, "days": 182.6, "day": "2024-10-12", "fromIso": "2024-10-12T21:00:00.000Z",
 		"at": "2025-01-02T10:04:05.678+07:00", "atDay": "2025-01-02"}`
 	if err := json.Unmarshal([]byte(in), &x); err != nil {
 		t.Fatal(err)
 	}
 	if x.Km != 1610 {
 		t.Errorf("km = %d, want 1610", x.Km)
+	}
+	if x.Days != 183 {
+		t.Errorf("days = %d, want 183", x.Days)
 	}
 	if x.Day != "2024-10-12" || x.FromISO != "2024-10-12" {
 		t.Errorf("dates = %q, %q", x.Day, x.FromISO)

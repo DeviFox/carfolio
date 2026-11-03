@@ -34,6 +34,10 @@ const OUTBOX_KEY = "carvisio.outbox.v1";
 // A guest garage the owner chose not to add to the account. It comes back
 // on sign-out, so declining loses nothing.
 const GUEST_KEY = "carvisio.guest-garage.v1";
+// The garage as it was before each time this module replaced records on
+// screen with the server's copy: a way back from any sync bug.
+const BACKUPS_KEY = "carvisio.backups.v1";
+const BACKUPS_KEPT = 3;
 
 const IMPORT_TIMEOUT_MS = 60_000;
 const FLUSH_DELAY_MS = 500;
@@ -47,18 +51,24 @@ type Rec = { id: ID };
 type SyncState = {
   // The last attempt to reach the server failed; changes are waiting.
   offline: boolean;
+  // Changes the server refused. They stay in this browser, on screen, and
+  // are offered to the server again on the next visit.
+  refused: number;
   // A guest garage meets an account that already has cars: add them?
   offer: { newCars: number; accountCars: number } | null;
 };
 
-export const useSync = create<SyncState>(() => ({ offline: false, offer: null }));
+export const useSync = create<SyncState>(() => ({ offline: false, refused: 0, offer: null }));
 
 // ---- outbox ---------------------------------------------------------------
 
 // One pending write per record: a later change to the same record replaces
 // the earlier one. item null means delete. Entries are replaced, never
 // mutated, so a flush can tell whether one changed while it was in flight.
-type Entry = { c: GarageCollection; id: ID; item: Rec | null };
+// refused holds the server's reason when it would not take this write; such
+// an entry is kept, never dropped, and not resent until the next page load
+// or the next edit of the same record.
+type Entry = { c: GarageCollection; id: ID; item: Rec | null; refused?: string };
 
 let outbox = new Map<string, Entry>();
 let outboxOwner: ID | null = null;
@@ -82,7 +92,9 @@ function loadOutbox() {
       | { owner: ID; entries: Entry[] }
       | null;
     outboxOwner = saved?.owner ?? null;
-    outbox = new Map((saved?.entries ?? []).map((e) => [`${e.c}:${e.id}`, e]));
+    // A new page load gives refused writes another try: the server may have
+    // been fixed since.
+    outbox = new Map((saved?.entries ?? []).map((e) => [`${e.c}:${e.id}`, { c: e.c, id: e.id, item: e.item }]));
   } catch {
     outboxOwner = null;
     outbox = new Map();
@@ -99,6 +111,27 @@ function diffInto(c: GarageCollection, prev: Rec[], next: Rec[]) {
   }
   for (const id of before.keys()) put(c, id, null);
 }
+
+const sendable = () => [...outbox.entries()].filter(([, e]) => !e.refused);
+
+function publish() {
+  let refused = 0;
+  for (const e of outbox.values()) if (e.refused) refused++;
+  useSync.setState({ offline: false, refused });
+}
+
+// Server order for single writes: parents' upserts first, children's
+// deletes first, as Store.Apply does for a batch.
+function rank(e: Entry): number {
+  const i = COLLECTIONS.indexOf(e.c);
+  return e.item ? i : 2 * COLLECTIONS.length - i;
+}
+
+// The server refused the batch as a whole (400/409), which says nothing
+// about which records are at fault. Sending them one by one lets every good
+// record through and pins the refusal on the bad ones.
+const isRefusal = (err: unknown) =>
+  err instanceof ApiError && (err.status === 400 || err.status === 409 || err.status === 413);
 
 function toChanges(entries: Entry[]): GarageChanges {
   const changes: GarageChanges = { upsert: {}, delete: {} };
@@ -131,7 +164,27 @@ const hasRecords = (g: GarageSnapshot) => COLLECTIONS.some((c) => g[c].length > 
 // Replace the store's garage with data owned by ownerId. A collection that
 // came back unchanged keeps its old array, so screens don't re-render for
 // nothing on every refresh.
+function backup(reason: string, data: unknown, ownerId: ID | null) {
+  try {
+    const list = JSON.parse(localStorage.getItem(BACKUPS_KEY) ?? "[]") as unknown[];
+    list.push({ at: new Date().toISOString(), reason, ownerId, data });
+    localStorage.setItem(BACKUPS_KEY, JSON.stringify(list.slice(-BACKUPS_KEPT)));
+  } catch {
+    // Out of space: better no backup than a broken sync.
+  }
+}
+
+// Whether replacing current with data takes any record off this browser.
+function drops(current: GarageSnapshot, data: GarageSnapshot): boolean {
+  return COLLECTIONS.some((c) => {
+    const kept = new Set((data[c] as Rec[]).map((r) => r.id));
+    return (current[c] as Rec[]).some((r) => !kept.has(r.id));
+  });
+}
+
 function applyRemote(data: GarageSnapshot, ownerId: ID | null) {
+  const current = useGarage.getState();
+  if (drops(current, data)) backup("replaced by the server copy", snapshotOf(current), current.ownerId);
   applyingRemote = true;
   try {
     useGarage.setState((s) => {
@@ -164,8 +217,17 @@ function withOutbox(data: GarageSnapshot): GarageSnapshot {
   return out as unknown as GarageSnapshot;
 }
 
+// Every edit of an account's garage goes to the outbox at once, signed in
+// or not yet: the first seconds of a visit, before /api/me answers, are
+// edits like any other. Only sending waits for the session.
 function onStoreChange(next: GarageSnapshot & { ownerId: ID | null }, prev: GarageSnapshot) {
-  if (applyingRemote || !session || next.ownerId !== session.userId) return;
+  if (applyingRemote || next.ownerId === null) return;
+  if (outboxOwner !== next.ownerId) {
+    // Unsent changes of another account: set them aside, never just drop.
+    if (outbox.size > 0) backup("unsent changes of another account", [...outbox.values()], outboxOwner);
+    outbox = new Map();
+    outboxOwner = next.ownerId;
+  }
   let changed = false;
   for (const c of COLLECTIONS) {
     if (next[c] === prev[c]) continue;
@@ -174,7 +236,7 @@ function onStoreChange(next: GarageSnapshot & { ownerId: ID | null }, prev: Gara
   }
   if (!changed) return;
   saveOutbox();
-  scheduleFlush(FLUSH_DELAY_MS);
+  if (session?.userId === next.ownerId) scheduleFlush(FLUSH_DELAY_MS);
 }
 
 // ---- sending and refreshing -----------------------------------------------
@@ -213,10 +275,12 @@ function flush(): Promise<void> {
 
 async function sendOnce(): Promise<boolean> {
   clearTimeout(flushTimer);
-  const sent = [...outbox.entries()];
+  const sent = sendable();
+  if (sent.length === 0) return true;
   try {
     await api.applyGarageChanges(toChanges(sent.map(([, e]) => e)));
   } catch (err) {
+    if (isRefusal(err)) return sendOneByOne(sent);
     onSendError(err);
     return false;
   }
@@ -224,7 +288,30 @@ async function sendOnce(): Promise<boolean> {
   accepted++;
   retryMs = 0;
   saveOutbox();
-  useSync.setState({ offline: false });
+  publish();
+  return true;
+}
+
+async function sendOneByOne(sent: [string, Entry][]): Promise<boolean> {
+  const ordered = [...sent].sort(([, a], [, b]) => rank(a) - rank(b));
+  for (const [key, e] of ordered) {
+    try {
+      await api.applyGarageChanges(toChanges([e]));
+      if (outbox.get(key) === e) outbox.delete(key);
+    } catch (err) {
+      if (!isRefusal(err)) {
+        saveOutbox();
+        onSendError(err);
+        return false;
+      }
+      console.error(`garage sync: the server refused ${e.c}/${e.id}, kept in this browser:`, err);
+      if (outbox.get(key) === e) outbox.set(key, { ...e, refused: err instanceof Error ? err.message : "refused" });
+    }
+  }
+  accepted++;
+  retryMs = 0;
+  saveOutbox();
+  publish();
   return true;
 }
 
@@ -232,15 +319,6 @@ function onSendError(err: unknown) {
   const status = err instanceof ApiError ? err.status : 0;
   if (status === 401) {
     useAuth.getState().sessionLost();
-    return;
-  }
-  if (status === 400 || status === 409 || status === 413) {
-    // The server won't take these changes, e.g. a record for a car another
-    // device deleted. It is the source of truth: drop them and catch up.
-    console.warn("garage sync: changes rejected, reloading from the server", err);
-    outbox.clear();
-    saveOutbox();
-    void pull();
     return;
   }
   // Offline, a server hiccup or rate limiting: keep the changes, try later.
@@ -271,7 +349,9 @@ async function pull(): Promise<void> {
 // without its session, so get it out first.
 export async function flushBeforeLogout(): Promise<void> {
   await flush();
-  if (session && outbox.size > 0) {
+  // Refused writes don't hold the owner here: they stay in the outbox
+  // through sign-out and are offered again on the next sign-in.
+  if (session && sendable().length > 0) {
     throw new Error("unsent changes");
   }
 }
@@ -285,9 +365,9 @@ async function enterAccount(user: User) {
   if (session?.userId === user.id || entering === user.id) return;
   entering = user.id;
   try {
-    loadOutbox();
     if (outboxOwner !== user.id) {
       // Unsent changes of another account can't go out under this one.
+      if (outbox.size > 0) backup("unsent changes of another account", [...outbox.values()], outboxOwner);
       outbox = new Map();
       outboxOwner = user.id;
       saveOutbox();
@@ -413,7 +493,7 @@ function enterGuest() {
   entering = null;
   pendingOffer = null;
   clearTimeout(flushTimer);
-  useSync.setState({ offline: false, offer: null });
+  useSync.setState({ offline: false, refused: 0, offer: null });
   if (useGarage.getState().ownerId === null) return;
   // The account's copy leaves the browser; its unsent changes stay in the
   // outbox for the next sign-in. A guest garage set aside comes back.
@@ -488,6 +568,7 @@ export function startSync(): () => void {
     void flush();
   };
 
+  loadOutbox();
   const unsubStore = useGarage.subscribe(onStoreChange);
   const unsubAuth = useAuth.subscribe((s, prev) => {
     if (s.status !== prev.status || s.user?.id !== prev.user?.id) onAuth();

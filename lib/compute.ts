@@ -9,6 +9,7 @@ import type {
   Vehicle,
   VehicleSystem,
 } from "./types";
+import { AXLE_LABEL, SIDE_LABEL } from "./types";
 
 export type ResourceSignal =
   | { kind: "unknown"; reason: "no_install_mileage" | "no_expected_life" | "no_part" | "no_current_mileage" }
@@ -258,10 +259,13 @@ export function findActiveInstalledPart(
   return active[0];
 }
 
+// Same name in the same place: "Ступица" front-left and front-right are two
+// different components.
 export function findComponentByName(
   components: Component[],
   name: string,
   systemId?: string,
+  position: ComponentPosition = {},
 ): Component | undefined {
   const needle = name.trim().toLocaleLowerCase("ru");
   if (!needle) return undefined;
@@ -269,8 +273,23 @@ export function findComponentByName(
     (c) =>
       !c.isArchived &&
       (systemId === undefined || c.systemId === systemId) &&
+      c.axle === position.axle &&
+      c.side === position.side &&
       c.name.trim().toLocaleLowerCase("ru") === needle,
   );
+}
+
+export type ComponentPosition = Pick<Component, "axle" | "side">;
+
+// "Перед · Лев", or "" when the position is not set.
+export function positionLabel(c: ComponentPosition): string {
+  return [c.axle && AXLE_LABEL[c.axle], c.side && SIDE_LABEL[c.side]].filter(Boolean).join(" · ");
+}
+
+// A name that tells same-named components apart, for selects and titles.
+export function componentLabel(c: Component): string {
+  const pos = positionLabel(c);
+  return pos ? `${c.name} (${pos.toLocaleLowerCase("ru")})` : c.name;
 }
 
 // Exact category first, then "Прочее", then whatever the car has.
@@ -322,8 +341,17 @@ export function sortEventsByDateDesc(events: MaintenanceEvent[]): MaintenanceEve
   return [...events].sort((a, b) => b.date.localeCompare(a.date));
 }
 
+// Same-named components keep a fixed order: front before rear, left before right.
+const AXLE_ORDER = { front: 1, rear: 2 } as const;
+const SIDE_ORDER = { left: 1, right: 2 } as const;
+
 export function sortComponentsByName(components: Component[]): Component[] {
-  return [...components].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  return [...components].sort(
+    (a, b) =>
+      a.name.localeCompare(b.name, "ru") ||
+      (a.axle ? AXLE_ORDER[a.axle] : 0) - (b.axle ? AXLE_ORDER[b.axle] : 0) ||
+      (a.side ? SIDE_ORDER[a.side] : 0) - (b.side ? SIDE_ORDER[b.side] : 0),
+  );
 }
 
 export function assertNewerMileage(

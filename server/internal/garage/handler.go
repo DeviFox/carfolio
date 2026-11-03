@@ -41,23 +41,24 @@ func (h *Handler) load(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) apply(w http.ResponseWriter, r *http.Request) {
+	user := auth.UserFrom(r.Context())
 	var c Changes
 	// Unknown fields are allowed: a browser may hold records written by an
 	// older version of the app, and those extra fields are simply dropped.
 	err := httpx.ReadJSONWith(w, r, &c, httpx.ReadOptions{MaxBytes: maxChangesBytes, AllowUnknownFields: true})
-	if err != nil {
-		httpx.Error(w, http.StatusBadRequest, err.Error())
-		return
+	if err == nil {
+		err = c.Validate()
 	}
-	if err := c.Validate(); err != nil {
+	if err != nil {
+		// Logged: a refused batch is the owner's data that didn't land.
+		h.log.Warn("garage changes refused", "user", user.ID, "err", err)
 		httpx.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	user := auth.UserFrom(r.Context())
 	err = h.store.Apply(r.Context(), user.ID, c)
 	if errors.Is(err, ErrConflict) {
-		h.log.Info("garage write conflict", "user", user.ID, "err", err)
+		h.log.Warn("garage write conflict", "user", user.ID, "err", err)
 		httpx.Error(w, http.StatusConflict, "changes reference a record that no longer exists")
 		return
 	}

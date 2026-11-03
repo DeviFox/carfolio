@@ -6,6 +6,7 @@ import s from "./component-panel.module.css";
 import StatusPill from "./status-pill";
 import { CloseIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
 import { DaysInput } from "./add-event-parts";
+import { ComponentPositionField } from "./position-picker";
 import { useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
 import { componentDeleteEffect } from "@/lib/records";
@@ -19,6 +20,7 @@ import {
   sortEventsByDateDesc,
   statusFromCondition,
 } from "@/lib/compute";
+import { POSITIONED_CATEGORIES } from "@/lib/types";
 import type { ComponentInspection, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 import type { ComponentRow } from "./system-list";
 
@@ -84,6 +86,9 @@ export default function ComponentPanel({
           <div className={s.titleGroup}>
             <EditableTitle id={titleId} componentId={component.id} name={component.name} />
             <p className={s.subtitle}>{system.name}</p>
+            {POSITIONED_CATEGORIES.includes(system.category) && !component.fluid ? (
+              <ComponentPositionField component={component} />
+            ) : null}
           </div>
           <button type="button" className={d.close} onClick={onClose} aria-label="Закрыть">
             <CloseIcon />

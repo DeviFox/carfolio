@@ -24,6 +24,26 @@ type AuthState = {
 
 let loading: Promise<void> | null = null;
 
+// The last signed-in user, so a visit without a connection still opens the
+// account's garage instead of treating the owner as a guest. Only a 401
+// from the server (or signing out) forgets it.
+const USER_KEY = "carvisio.user.v1";
+
+function rememberUser(user: User | null) {
+  try {
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_KEY);
+  } catch {}
+}
+
+function rememberedUser(): User | null {
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
 export const useAuth = create<AuthState>((set) => ({
   status: "unknown",
   user: null,
@@ -31,18 +51,37 @@ export const useAuth = create<AuthState>((set) => ({
   load: () => {
     loading ??= api
       .me()
-      .then((user) => set({ status: "user", user }))
-      // 401 is a guest; an unreachable API is treated the same way: the
-      // garage works without an account, so nothing else should break.
-      .catch(() => set({ status: "guest", user: null }));
+      .then((user) => {
+        rememberUser(user);
+        set({ status: "user", user });
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          rememberUser(null);
+          set({ status: "guest", user: null });
+          return;
+        }
+        // No answer, or a server error: that says nothing about the session.
+        // Stay with whoever was signed in last; sync retries on its own, and a
+        // real 401 from it signs the owner out then.
+        const user = rememberedUser();
+        set(user ? { status: "user", user } : { status: "guest", user: null });
+        loading = null;
+      });
   },
 
   notice: null,
   clearNotice: () => set({ notice: null }),
   setNotice: (notice) => set({ notice }),
-  sessionLost: () => set({ status: "guest", user: null }),
+  sessionLost: () => {
+    rememberUser(null);
+    set({ status: "guest", user: null });
+  },
 
-  signedIn: (user, notice) => set({ status: "user", user, notice: notice ?? null }),
+  signedIn: (user, notice) => {
+    rememberUser(user);
+    set({ status: "user", user, notice: notice ?? null });
+  },
 
   logout: async () => {
     try {
@@ -51,6 +90,7 @@ export const useAuth = create<AuthState>((set) => ({
       // Already gone on the server: locally it is a logout all the same.
       if (!(err instanceof ApiError) || err.status !== 401) throw err;
     }
+    rememberUser(null);
     set({ status: "guest", user: null });
   },
 }));

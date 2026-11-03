@@ -1,10 +1,12 @@
 import type {
+  Axle,
   ComponentKind,
   Condition,
   ID,
   InstalledPart,
   MaintenanceEvent,
   MaintenanceType,
+  Side,
   Vehicle,
 } from "./types";
 import { formatKm } from "./compute";
@@ -16,7 +18,7 @@ export interface AddRecordInput {
   mileageKm?: number;
   componentId?: ID;
   // fluid: FluidSpec key when the component comes from the fluid catalog.
-  newComponent?: { name: string; systemId: ID; fluid?: string };
+  newComponent?: { name: string; systemId: ID; fluid?: string; axle?: Axle; side?: Side };
   costMinorUnits?: number;
   currency?: string;
   notes?: string;

@@ -5,14 +5,10 @@ import s from "./dialog.module.css";
 import { CloseIcon } from "./icons";
 import { useConfirmClose, useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
-import {
-  findActiveInstalledPart,
-  findComponentByName,
-  formatKm,
-  sortComponentsByName,
-  systemForCategory,
-} from "@/lib/compute";
-import { FLUIDS } from "@/lib/types";
+import { componentLabel, findActiveInstalledPart, findComponentByName, formatKm } from "@/lib/compute";
+import { sortComponentsByName, systemForCategory, type ComponentPosition } from "@/lib/compute";
+import { FLUIDS, POSITIONED_CATEGORIES } from "@/lib/types";
+import { PositionPicker } from "./position-picker";
 import type { Condition, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Props = {
@@ -84,6 +80,7 @@ export default function AddEventDialog({
   );
   const [name, setName] = useState("");
   const [systemId, setSystemId] = useState(defaultSystemId ?? vehicleSystems[0]?.id ?? "");
+  const [position, setPosition] = useState<ComponentPosition>({});
   const [date, setDate] = useState(today());
   const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
   const templateCost = minorToText(template?.costMinorUnits);
@@ -101,7 +98,7 @@ export default function AddEventDialog({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const requestClose = useConfirmClose(
-    [type, pick, name, systemId, date, mileage, cost, currency, track, lifeKm, lifeDays, condition, notes],
+    [type, pick, name, systemId, position, date, mileage, cost, currency, track, lifeKm, lifeDays, condition, notes],
     onClose,
   );
   // Repeating a job, the price is the one thing to judge, so focus starts there.
@@ -131,7 +128,10 @@ export default function AddEventDialog({
     : true;
   const tracking = type === "replacement" && (track ?? trackAuto);
   const showCost = type === "replacement" || type === "repair" || type === "fluid_service";
-  const duplicate = isNew ? findComponentByName(vehicleComponents, name) : undefined;
+  const newSystem = vehicleSystems.find((x) => x.id === systemId);
+  const positioned = isNew && !!newSystem && POSITIONED_CATEGORIES.includes(newSystem.category);
+  const newPosition = positioned ? position : {};
+  const duplicate = isNew ? findComponentByName(vehicleComponents, name, undefined, newPosition) : undefined;
   // The template only speaks for the same job on the same component.
   const repeat = !!template && type === "replacement" && !!selected && selected.id === defaultComponentId;
   const compact = repeat && !expanded;
@@ -169,7 +169,7 @@ export default function AddEventDialog({
     const e: Errors = {};
     if (isNew) {
       if (!name.trim()) e.name = "Укажите название.";
-      else if (findComponentByName(vehicleComponents, name, systemId)) {
+      else if (findComponentByName(vehicleComponents, name, systemId, newPosition)) {
         e.name = "Такой компонент уже есть в этой системе.";
       }
       if (!systemId) e.system = "Выберите систему.";
@@ -223,7 +223,7 @@ export default function AddEventDialog({
       mileageKm: mileage.trim() ? toNumber(mileage) : undefined,
       componentId: selected?.id,
       newComponent: isNew
-        ? { name: name.trim(), systemId }
+        ? { name: name.trim(), systemId, ...newPosition }
         : pickedFluid && fluidSystem
           ? { name: pickedFluid.name, systemId: fluidSystem.id, fluid: pickedFluid.key }
           : undefined,
@@ -261,7 +261,7 @@ export default function AddEventDialog({
         <div className={s.header}>
           <div className={s.titleGroup}>
             <h2 className={s.title} id={titleId}>
-              {repeat ? `Замена: ${selected?.name}` : "Добавить запись"}
+              {repeat && selected ? `Замена: ${componentLabel(selected)}` : "Добавить запись"}
             </h2>
             <p className={s.subtitle} id={`${titleId}-sub`}>
               {repeat && template
@@ -313,7 +313,7 @@ export default function AddEventDialog({
                   ? FLUIDS.map((f) => {
                       const c = fluidComponent(f.key);
                       return c ? (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c.id} value={c.id}>{componentLabel(c)}</option>
                       ) : (
                         <option key={f.key} value={FLUID + f.key}>{f.name}</option>
                       );
@@ -321,7 +321,7 @@ export default function AddEventDialog({
                   : groups.map((g) => (
                       <optgroup key={g.sys.id} label={g.sys.name}>
                         {g.items.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
+                          <option key={c.id} value={c.id}>{componentLabel(c)}</option>
                         ))}
                       </optgroup>
                     ))}
@@ -389,6 +389,7 @@ export default function AddEventDialog({
               </div>
             </div>
           ) : null}
+          {positioned ? <PositionPicker value={position} onChange={setPosition} /> : null}
 
           <div className={s.row}>
             <div className={s.field}>

@@ -201,35 +201,6 @@
 }
 .linkBtn:hover { text-decoration: underline; }
 
-.segmented {
-  display: flex;
-  gap: 4px;
-  background: color-mix(in srgb, var(--line) 55%, transparent);
-  padding: 3px;
-  border-radius: var(--r-sm);
-  height: 42px;
-}
-.segBtn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: var(--r-xs);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--muted);
-  padding: 0 10px;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-.segBtn:hover { color: var(--ink); }
-.segBtn.on {
-  background: var(--card);
-  color: var(--ink);
-  box-shadow: var(--shadow-sm);
-  font-weight: 600;
-}
-
 .footer {
   display: flex;
   justify-content: space-between;

@@ -23,7 +23,6 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
   const updateMileage = useGarage((s) => s.updateMileage);
 
   const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
-  const [source, setSource] = useState<"owner" | "service">("owner");
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
@@ -36,7 +35,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
       setError(err);
       return;
     }
-    updateMileage(vehicle.id, n, source);
+    updateMileage(vehicle.id, n);
     setError(null);
     onClose();
   }
@@ -96,30 +95,6 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
                 Значение с одометра. Пробег не может уменьшаться.
               </span>
             )}
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Источник</label>
-            <div className={s.segmented} role="radiogroup" aria-label="Источник пробега">
-              <button
-                type="button"
-                className={`${s.segBtn} ${source === "owner" ? s.on : ""}`}
-                onClick={() => setSource("owner")}
-                aria-checked={source === "owner"}
-                role="radio"
-              >
-                Владелец
-              </button>
-              <button
-                type="button"
-                className={`${s.segBtn} ${source === "service" ? s.on : ""}`}
-                onClick={() => setSource("service")}
-                aria-checked={source === "service"}
-                role="radio"
-              >
-                СТО
-              </button>
-            </div>
           </div>
 
           <div className={s.footer}>

@@ -15,6 +15,17 @@ export type SystemCategory =
 
 export type ComponentKind = "consumable" | "replaceable" | "inspectable";
 
+// Where a component sits on the car. Both are optional and independent:
+// "передние колодки" have an axle but no side.
+export type Axle = "front" | "rear";
+export type Side = "left" | "right";
+
+export const AXLE_LABEL: Record<Axle, string> = { front: "Перед", rear: "Зад" };
+export const SIDE_LABEL: Record<Side, string> = { left: "Левый", right: "Правый" };
+
+// Systems whose parts come in pairs or per wheel; only these offer a position.
+export const POSITIONED_CATEGORIES: SystemCategory[] = ["suspension", "brakes", "tires", "electrical"];
+
 export type MaintenanceType =
   | "replacement"
   | "inspection"
@@ -87,6 +98,8 @@ export interface Component {
   kind: ComponentKind;
   // FluidSpec key; set only for fluids created from FLUIDS.
   fluid?: string;
+  axle?: Axle;
+  side?: Side;
   isArchived: boolean;
 }
 

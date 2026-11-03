@@ -31,6 +31,7 @@ export default function Page() {
   const inspections = useGarage((s) => s.inspections);
   const inAccount = useGarage((s) => s.ownerId !== null);
   const offline = useSync((s) => s.offline);
+  const refused = useSync((s) => s.refused);
 
   useEffect(() => {
     setHydrated(true);
@@ -238,7 +239,9 @@ export default function Page() {
             <span className={styles.statusNote}>
               {!hydrated || !inAccount
                 ? "Машины хранятся в этом браузере. Войдите, чтобы получить доступ к гаражу на всех устройствах."
-                : offline
+                : refused > 0
+                  ? "Часть изменений сервер не принял. Они сохранены в этом браузере, попробуем отправить снова при следующем открытии."
+                  : offline
                   ? "Нет связи с сервером. Изменения сохранены локально и будут синхронизированы, когда связь появится."
                   : "Гараж синхронизирован."}
             </span>

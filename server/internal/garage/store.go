@@ -111,11 +111,11 @@ func loadSystems(ctx context.Context, tx pgx.Tx, userID string) ([]System, error
 
 func loadComponents(ctx context.Context, tx pgx.Tx, userID string) ([]Component, error) {
 	return collect(ctx, tx, `
-		SELECT id, vehicle_id, system_id, name, kind, fluid, is_archived
+		SELECT id, vehicle_id, system_id, name, kind, fluid, axle, side, is_archived
 		FROM components WHERE user_id = $1
 		ORDER BY vehicle_id, system_id, name, id`, userID,
 		func(r pgx.Rows, x *Component) error {
-			return r.Scan(&x.ID, &x.VehicleID, &x.SystemID, &x.Name, &x.Kind, &x.Fluid, &x.IsArchived)
+			return r.Scan(&x.ID, &x.VehicleID, &x.SystemID, &x.Name, &x.Kind, &x.Fluid, &x.Axle, &x.Side, &x.IsArchived)
 		})
 }
 
@@ -219,9 +219,9 @@ func queueUpserts(b *pgx.Batch, userID string, g *Garage, merge bool) {
 		b.Queue(systems, userID, x.ID, x.VehicleID, x.Name, x.Category, x.SortOrder, x.IsArchived)
 	}
 
-	components := upsertSQL(merge, "components", "vehicle_id", "system_id", "name", "kind", "fluid", "is_archived")
+	components := upsertSQL(merge, "components", "vehicle_id", "system_id", "name", "kind", "fluid", "axle", "side", "is_archived")
 	for _, x := range g.Components {
-		b.Queue(components, userID, x.ID, x.VehicleID, x.SystemID, x.Name, x.Kind, x.Fluid, x.IsArchived)
+		b.Queue(components, userID, x.ID, x.VehicleID, x.SystemID, x.Name, x.Kind, x.Fluid, x.Axle, x.Side, x.IsArchived)
 	}
 
 	parts := upsertSQL(merge, "installed_parts", "component_id", "installed_at_mileage_km", "installed_at_date",
