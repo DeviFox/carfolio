@@ -6,6 +6,7 @@ import shell from "@/app/page.module.css";
 import styles from "./account-control.module.css";
 import { UserIcon } from "./icons";
 import { commonAuthError, useAuth } from "@/lib/auth";
+import { flushBeforeLogout } from "@/lib/sync";
 
 type Props = {
   // Phones: an icon only, the top bar has no room for a word.
@@ -78,6 +79,14 @@ export default function AccountControl({ compact }: Props) {
     setBusy(true);
     setError("");
     try {
+      // Changes not yet on the server would be lost with the session.
+      await flushBeforeLogout();
+    } catch {
+      setError("Не все изменения успели сохраниться в аккаунте. Проверьте интернет и попробуйте выйти ещё раз.");
+      setBusy(false);
+      return;
+    }
+    try {
       await logout();
       setOpen(false);
     } catch (err) {
@@ -116,7 +125,7 @@ export default function AccountControl({ compact }: Props) {
             <span className={styles.whoLabel}>Вы вошли как</span>
             <span className={styles.email}>{user.email}</span>
           </div>
-          <p className={styles.note}>Машины хранятся в этом браузере и останутся здесь после выхода.</p>
+          <p className={styles.note}>Гараж хранится в аккаунте: войдите на другом устройстве, и он будет там.</p>
           <button type="button" className={styles.logout} onClick={onLogout} disabled={busy}>
             {busy ? "Выходим…" : "Выйти"}
           </button>

@@ -20,3 +20,4 @@
 {"type":"edit","file":"/Users/olegsv/Projects/carfolio/server/internal/config/config.go","timestamp":1793607171436,"sessionId":null}
 {"type":"edit","file":"/Users/olegsv/Projects/carfolio/server/cmd/api/main.go","timestamp":1793607184527,"sessionId":null}
 {"type":"edit","file":"/Users/olegsv/Projects/carfolio/server/internal/db/db.go","timestamp":1793607235491,"sessionId":null}
+{"type":"edit","file":"/Users/olegsv/Projects/carfolio/server/migrations/00003_garage.sql","timestamp":1793677597636,"sessionId":null}

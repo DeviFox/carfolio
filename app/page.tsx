@@ -10,6 +10,7 @@ import AuthNotice from "@/components/auth-notice";
 import IntroCard, { introDismissed } from "@/components/intro-card";
 import { HelpIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
+import { useSync } from "@/lib/sync";
 import { formatKm, vehicleHealth } from "@/lib/compute";
 import StatusPill from "@/components/status-pill";
 import { SYSTEM_STATUS_TEXT } from "@/components/system-list";
@@ -28,6 +29,8 @@ export default function Page() {
   const components = useGarage((s) => s.components);
   const installedParts = useGarage((s) => s.installedParts);
   const inspections = useGarage((s) => s.inspections);
+  const inAccount = useGarage((s) => s.ownerId !== null);
+  const offline = useSync((s) => s.offline);
 
   useEffect(() => {
     setHydrated(true);
@@ -232,7 +235,13 @@ export default function Page() {
             <strong>{hydrated ? vehicles.length : 0}</strong>
             {plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
             <span className={styles.sep}>·</span>
-            <span className={styles.statusNote}>Машины хранятся в этом браузере. Синхронизацию между устройствами добавим позже.</span>
+            <span className={styles.statusNote}>
+              {!hydrated || !inAccount
+                ? "Машины хранятся в этом браузере. Войдите, чтобы получить доступ к гаражу на всех устройствах."
+                : offline
+                  ? "Нет связи с сервером. Изменения сохранены локально и будут синхронизированы, когда связь появится."
+                  : "Гараж синхронизирован."}
+            </span>
           </div>
         </main>
         <VersionTag />

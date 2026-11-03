@@ -12,10 +12,14 @@ type AuthState = {
   load: () => void;
   signedIn: (user: User, notice?: string) => void;
   logout: () => Promise<void>;
-  // One line for the garage after a flow ends there ("Аккаунт создан…").
-  // Shown once, cleared when dismissed or when the garage unmounts.
+  // The server stopped accepting the session (signed out elsewhere, password
+  // reset): from now on this is a guest.
+  sessionLost: () => void;
+  // One line for the garage after a flow ends there ("Аккаунт создан…"), or
+  // after the garage moved into the account. Shown once, cleared when shown.
   notice: string | null;
   clearNotice: () => void;
+  setNotice: (notice: string) => void;
 };
 
 let loading: Promise<void> | null = null;
@@ -35,6 +39,8 @@ export const useAuth = create<AuthState>((set) => ({
 
   notice: null,
   clearNotice: () => set({ notice: null }),
+  setNotice: (notice) => set({ notice }),
+  sessionLost: () => set({ status: "guest", user: null }),
 
   signedIn: (user, notice) => set({ status: "user", user, notice: notice ?? null }),
 

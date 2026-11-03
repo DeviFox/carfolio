@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { YandexMetrika } from "@/components/yandex-metrika";
 import { GoogleTag } from "@/components/google-tag";
+import GarageSync from "@/components/garage-sync";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="ru" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         {children}
+        <GarageSync />
         <YandexMetrika />
         <GoogleTag />
       </body>

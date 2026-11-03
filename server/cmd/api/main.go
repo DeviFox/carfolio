@@ -13,6 +13,7 @@ import (
 	"github.com/DeviFox/carfolio/server/internal/auth"
 	"github.com/DeviFox/carfolio/server/internal/config"
 	"github.com/DeviFox/carfolio/server/internal/db"
+	"github.com/DeviFox/carfolio/server/internal/garage"
 	"github.com/DeviFox/carfolio/server/internal/httpx"
 	"github.com/DeviFox/carfolio/server/internal/mailer"
 )
@@ -64,6 +65,7 @@ func run(log *slog.Logger) error {
 		w.Write([]byte("ok"))
 	})
 	authHandler.Routes(mux)
+	garage.NewHandler(garage.NewStore(pool), log).Routes(mux, authHandler.RequireUser)
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

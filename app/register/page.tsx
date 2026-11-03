@@ -56,7 +56,7 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       const user = await api.register(email.trim(), password);
-      signedIn(user, `Аккаунт создан: ${user.email}. Машины по-прежнему хранятся в этом браузере.`);
+      signedIn(user, `Аккаунт создан: ${user.email}.`);
       router.replace("/");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -78,7 +78,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Регистрация"
-      subtitle="Аккаунт пока хранит только вход: машины остаются в этом браузере."
+      subtitle="Гараж будет храниться в аккаунте и откроется на любом устройстве. Машины из этого браузера перенесутся в него."
       aside={<>Уже есть аккаунт? <Link href="/login/" className={styles.link}>Войти</Link></>}
     >
       <form className={styles.form} onSubmit={onSubmit} noValidate>

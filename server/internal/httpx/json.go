@@ -10,13 +10,25 @@ import (
 
 const maxBodyBytes = 1 << 20 // 1 MiB
 
+type ReadOptions struct {
+	MaxBytes           int64
+	AllowUnknownFields bool
+}
+
 // ReadJSON decodes the request body into dst, rejecting unknown fields,
-// oversized bodies and trailing data.
+// bodies over 1 MiB and trailing data.
 func ReadJSON(w http.ResponseWriter, r *http.Request, dst any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	return ReadJSONWith(w, r, dst, ReadOptions{MaxBytes: maxBodyBytes})
+}
+
+// ReadJSONWith is ReadJSON with its limits set by opts.
+func ReadJSONWith(w http.ResponseWriter, r *http.Request, dst any, opts ReadOptions) error {
+	r.Body = http.MaxBytesReader(w, r.Body, opts.MaxBytes)
 
 	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
+	if !opts.AllowUnknownFields {
+		dec.DisallowUnknownFields()
+	}
 	if err := dec.Decode(dst); err != nil {
 		return fmt.Errorf("invalid JSON body: %w", err)
 	}

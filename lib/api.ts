@@ -1,3 +1,5 @@
+import type { GarageData, ID } from "./types";
+
 // Client for the Go API (server/). The API lives on its own domain
 // (api.carvisio.pro), so every call is cross-origin and carries the session
 // cookie with credentials: "include".
@@ -23,7 +25,33 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+// The garage as the server keeps it: GarageData without the browser-only
+// fields (schema version, last viewed car).
+export type GarageCollection =
+  | "vehicles"
+  | "systems"
+  | "components"
+  | "installedParts"
+  | "events"
+  | "mileageHistory"
+  | "inspections"
+  | "reminders";
+export type GarageSnapshot = Pick<GarageData, GarageCollection>;
+
+// One batch of writes, applied by the server all or nothing. merge keeps
+// the account's version of any record that already exists there.
+export type GarageChanges = {
+  merge?: boolean;
+  upsert: Partial<GarageSnapshot>;
+  delete: Partial<Record<GarageCollection, ID[]>>;
+};
+
+async function request<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+  timeoutMs = 15_000,
+): Promise<T> {
   let res: Response;
   try {
     res = await fetch(API_URL + path, {
@@ -32,7 +60,7 @@ async function request<T>(method: "GET" | "POST", path: string, body?: unknown):
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
       // A hung API should end in an error, not in "Входим…" forever.
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
     throw new ApiError(0, "network error");
@@ -60,4 +88,8 @@ export const api = {
   forgotPassword: (email: string) => request<void>("POST", "/api/auth/password/forgot", { email }),
   resetPassword: (token: string, password: string) =>
     request<User>("POST", "/api/auth/password/reset", { token, password }),
+  garage: () => request<GarageSnapshot>("GET", "/api/garage"),
+  // A first import carries a whole garage: give it longer than a click.
+  applyGarageChanges: (changes: GarageChanges, timeoutMs?: number) =>
+    request<void>("POST", "/api/garage/changes", changes, timeoutMs),
 };
