@@ -1,0 +1,173 @@
+/* Auth pages: one narrow card on paper, a little above the optical centre. */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: clamp(24px, 9vh, 112px) 40px 48px;
+}
+
+/* Flat on paper: a hairline, no shadow. Only dialogs float. */
+.card {
+  width: min(100%, 400px);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 32px 32px 28px;
+}
+
+.heading { display: flex; flex-direction: column; gap: 8px; }
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.subtitle {
+  font-size: var(--fs-base);
+  color: var(--muted);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.subtitle strong { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+
+.form { display: flex; flex-direction: column; gap: 18px; }
+
+.submit {
+  width: 100%;
+  height: 42px;
+  justify-content: center;
+  margin-top: 6px;
+}
+/* Busy keeps the accent (not the grey of a disabled .primary): "Входим…" is
+   the only sign the request is running, so it must stay readable. */
+.submit[aria-busy="true"] { cursor: progress; opacity: 0.8; }
+
+/* Password field as a grid: label and its aside share the first row, but the
+   aside comes after the input in the DOM (tab order: input first). */
+.passwordField {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 8px;
+}
+.passwordLabel { grid-column: 1; grid-row: 1; }
+.passwordAside { grid-column: 2; grid-row: 1; align-self: center; }
+.passwordWrap, .passwordMsg { grid-column: 1 / -1; }
+
+/* Password with a show/hide toggle inside the field's right edge. */
+.passwordWrap { position: relative; }
+.passwordInput { padding-right: 44px; }
+.reveal {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  color: var(--muted);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.reveal:hover { background: color-mix(in srgb, var(--line) 60%, transparent); color: var(--ink); }
+.reveal:focus-visible { outline-offset: -2px; }
+.reveal svg { width: 18px; height: 18px; }
+
+/* Text links inside and under the card. Blue is the link colour, but the
+   card's one strong blue stays the submit button. */
+.link {
+  color: var(--accent);
+  font-weight: 500;
+  text-underline-offset: 3px;
+  border-radius: var(--r-xs);
+}
+.link:hover { text-decoration: underline; }
+
+.labelLink {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+  text-underline-offset: 3px;
+  border-radius: var(--r-xs);
+  transition: color 120ms ease;
+}
+.labelLink:hover { color: var(--ink); text-decoration: underline; }
+
+.aside {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+}
+
+.formError {
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--danger) 6%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
+  color: var(--danger-ink);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.formError .link { color: inherit; text-decoration: underline; }
+
+/* Success card (DESIGN.md): an ok wash with a check, for "письмо отправлено". */
+.success {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--ok) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, var(--line));
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.successIcon { width: 18px; height: 18px; color: var(--ok-ink); flex-shrink: 0; margin-top: 1px; }
+
+.actions { display: flex; flex-direction: column; gap: 12px; }
+
+/* Messages that take focus so a keyboard user lands on them; they are not
+   controls, so no focus ring. */
+.formError:focus, .actions:focus { outline: none; }
+
+/* Garage: a one-time line after sign-in, register or reset. The success card
+   with a close button; it stays until dismissed or until the garage is left. */
+.notice { align-items: center; padding-right: 6px; margin-top: 12px; max-width: 560px; }
+.notice > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.noticeClose {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  color: var(--muted);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.noticeClose:hover { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ink); }
+.noticeClose:focus-visible { outline-offset: 0; }
+.noticeClose svg { width: 16px; height: 16px; }
+
+/* Fingers: the 13px links get a ~36px tall hit area; negative margins keep
+   the layout exactly where it was. */
+@media (pointer: coarse) {
+  .labelLink, .aside .link { display: inline-block; padding: 9px 6px; margin: -9px -6px; }
+}
+
+@media (max-width: 820px) {
+  .main { padding: 24px 16px 32px; }
+}
+
+@media (max-width: 440px) {
+  .card { padding: 24px 20px 20px; gap: 20px; border-radius: var(--r-lg); }
+  .title { font-size: 22px; }
+}

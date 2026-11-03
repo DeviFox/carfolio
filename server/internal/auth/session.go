@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	cookieName = "carfolio_session"
+	cookieName = "carvisio_session"
 	// Browsers cap cookie lifetime at 400 days. The cookie is re-issued on
 	// every authenticated request, so an active user is never logged out.
 	cookieMaxAge = 400 * 24 * time.Hour

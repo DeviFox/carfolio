@@ -1,17 +1,21 @@
+# Pinned project name: container and volume are "carvisio-*" whatever the
+# checkout directory is called.
+name: carvisio
+
 services:
   db:
     image: postgres:17-alpine
-    container_name: carfolio-db
+    container_name: carvisio-db
     environment:
-      POSTGRES_USER: carfolio
-      POSTGRES_PASSWORD: carfolio # local development only
-      POSTGRES_DB: carfolio
+      POSTGRES_USER: carvisio
+      POSTGRES_PASSWORD: carvisio # local development only
+      POSTGRES_DB: carvisio
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U carfolio -d carfolio"]
+      test: ["CMD-SHELL", "pg_isready -U carvisio -d carvisio"]
       interval: 5s
       timeout: 3s
       retries: 10

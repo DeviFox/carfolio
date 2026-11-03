@@ -132,6 +132,35 @@ export function HelpIcon(p: Props) {
   );
 }
 
+export function UserIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="12" cy="8.5" r="3.5" />
+      <path d="M5 19.5c1.2-3.2 3.9-5 7-5s5.8 1.8 7 5" />
+    </svg>
+  );
+}
+
+export function EyeIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.75" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon(p: Props) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M9.9 5.8A9 9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-2.6 3.4" />
+      <path d="M6.5 7.6C3.9 9.3 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1" />
+      <path d="M10 10.2a2.75 2.75 0 0 0 3.8 3.8" />
+      <path d="M3.5 3.5l17 17" />
+    </svg>
+  );
+}
+
 export function CheckIcon(p: Props) {
   return (
     <svg {...base} {...p}>

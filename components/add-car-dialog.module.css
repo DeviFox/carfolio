@@ -173,7 +173,7 @@
 
 .error {
   font-size: var(--fs-xs);
-  color: var(--danger);
+  color: var(--danger-ink);
   font-weight: 500;
 }
 

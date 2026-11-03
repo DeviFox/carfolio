@@ -176,7 +176,8 @@
   font-size: var(--fs-sm);
 }
 .repeatText { color: var(--body); font-variant-numeric: tabular-nums; }
-.error { font-size: var(--fs-xs); color: var(--danger); font-weight: 500; }
+/* Text in danger-ink: --danger itself is 3.8:1 on white, below AA for 12px. */
+.error { font-size: var(--fs-xs); color: var(--danger-ink); font-weight: 500; }
 /* Not an error: the save goes through, the owner is just asked to look twice. */
 .warning { font-size: var(--fs-xs); color: var(--warn-ink); font-weight: 500; line-height: 1.4; }
 

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import AddCarDialog from "@/components/add-car-dialog";
 import AppBar, { VersionTag } from "@/components/app-bar";
+import AccountControl from "@/components/account-control";
+import AuthNotice from "@/components/auth-notice";
 import IntroCard, { introDismissed } from "@/components/intro-card";
 import { HelpIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
@@ -120,6 +122,7 @@ export default function Page() {
             <button type="button" className={styles.toolBtn} onClick={() => setShowIntro(true)} aria-label="Как это работает">
               <HelpIcon />
             </button>
+            <AccountControl compact />
             <button
               type="button"
               className={styles.primaryBtn}
@@ -137,6 +140,7 @@ export default function Page() {
           <header className={styles.header}>
             <div>
               <h1 className={styles.h1}>Мой гараж</h1>
+              <AuthNotice />
             </div>
           </header>
 
@@ -228,7 +232,7 @@ export default function Page() {
             <strong>{hydrated ? vehicles.length : 0}</strong>
             {plural(vehicles.length, "автомобиль", "автомобиля", "автомобилей")}
             <span className={styles.sep}>·</span>
-            <span className={styles.statusNote}>Пока Carvisio хранит данные в вашем браузере. В будущем добавим аккаунты и синхронизацию, чтобы пользоваться приложением с разных устройств.</span>
+            <span className={styles.statusNote}>Машины хранятся в этом браузере. Синхронизацию между устройствами добавим позже.</span>
           </div>
         </main>
         <VersionTag />

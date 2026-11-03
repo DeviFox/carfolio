@@ -321,7 +321,7 @@ a.toolBtn:hover, button.toolBtn:hover { background: color-mix(in srgb, var(--lin
     gap: 12px;
   }
 
-  .topBar .primaryBtn { padding: 7px 12px; font-size: var(--fs-sm); flex-shrink: 0; gap: 6px; }
+  .topBar .primaryBtn { padding: 7px 12px; font-size: var(--fs-sm); flex-shrink: 0; gap: 6px; margin-left: 6px; }
   .topBar .primaryBtn :global(svg) { width: 14px; height: 14px; }
 
   .topBrand { min-width: 0; flex-shrink: 1; }
