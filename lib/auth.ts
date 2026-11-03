@@ -99,7 +99,7 @@ export const useAuth = create<AuthState>((set) => ({
 // (wrong password, taken email, expired link) are worded by the form itself.
 export function commonAuthError(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 0) return "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз. Если включён VPN, временно выключите его: сейчас он может мешать, мы это скоро исправим.";
+    if (err.status === 0) return "Не удалось связаться с сервером. Проверьте подключение интернету и попробуйте ещё раз. \n Если включён VPN, попробуйте выключить его, это временно, мы уже исправляем.";
     // The server's rate-limit window is 15 minutes, counted from the first attempt.
     if (err.status === 429) return "Слишком много попыток. Подождите до 15 минут и попробуйте снова.";
     // The forms check the obvious cases first; these are the ones only the server catches.
