@@ -8,6 +8,7 @@ import { CloseIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
 import { DaysInput } from "./add-event-parts";
 import { ComponentPositionField } from "./position-picker";
 import { useModal } from "@/lib/use-modal";
+import { groupInt, groupedChange, intText } from "@/lib/number-input";
 import { useGarage } from "@/lib/store";
 import { componentDeleteEffect } from "@/lib/records";
 import {
@@ -61,7 +62,6 @@ export default function ComponentPanel({
   }, [confirmingDelete]);
 
   const { component, system, part, resource, status } = row;
-  const units = vehicle.units;
   const history = sortEventsByDateDesc(events.filter((e) => e.componentIds.includes(component.id)));
   const inspectionStatus = inspection ? statusFromCondition(inspection.condition) : null;
   // What a first record for this component naturally is.
@@ -95,11 +95,11 @@ export default function ComponentPanel({
           </button>
         </header>
 
-        <section className={s.section} aria-label="Ресурс">
+        <section className={s.section} aria-label="Срок службы">
           <div className={s.statusRow}>
             <StatusPill label={status.label} text={status.text} />
             {resource.kind === "known" ? (
-              <span className={`${s.summary} numeric`}>{resourceSummary(resource, units)}</span>
+              <span className={`${s.summary} numeric`}>{resourceSummary(resource)}</span>
             ) : null}
           </div>
 
@@ -119,14 +119,14 @@ export default function ComponentPanel({
           ) : (
             <p className={s.empty}>
               {lifeMissing
-                ? "Ресурс не задан. Укажите его, чтобы считать остаток."
+                ? "Срок службы не задан. Укажите его, чтобы считать остаток."
                 : resource.kind === "unknown" && resource.reason === "no_current_mileage"
                   ? "Не указан текущий пробег автомобиля. Укажите его, чтобы считать остаток."
                   : part
                   ? "Неизвестно, когда установлена текущая деталь."
                   : component.kind === "inspectable"
-                    ? "Ресурс не отслеживается, состояние берётся из осмотров."
-                    : "Нет записей о замене. Добавьте её, чтобы считать ресурс."}
+                    ? "Срок службы не отслеживается, состояние берётся из осмотров."
+                    : "Нет записей о замене. Добавьте её, чтобы считать срок службы."}
             </p>
           )}
 
@@ -137,17 +137,17 @@ export default function ComponentPanel({
                 <dd className="numeric">
                   {[
                     part.installedAtDate ? formatDate(part.installedAtDate) : null,
-                    part.installedAtMileageKm !== undefined ? formatKm(part.installedAtMileageKm, units) : null,
+                    part.installedAtMileageKm !== undefined ? formatKm(part.installedAtMileageKm) : null,
                   ]
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </dd>
               </div>
               <div>
-                <dt>Ресурс</dt>
+                <dt>Срок службы</dt>
                 <dd className="numeric">
                   {[
-                    part.expectedLifeKm ? formatKm(part.expectedLifeKm, units) : null,
+                    part.expectedLifeKm ? formatKm(part.expectedLifeKm) : null,
                     part.expectedLifeDays ? formatDuration(part.expectedLifeDays) : null,
                   ]
                     .filter(Boolean)
@@ -159,7 +159,7 @@ export default function ComponentPanel({
                   <dt>Прошло</dt>
                   <dd className="numeric">
                     {[
-                      resource.drivenKm !== undefined ? formatKm(resource.drivenKm, units) : null,
+                      resource.drivenKm !== undefined ? formatKm(resource.drivenKm) : null,
                       resource.elapsedDays !== undefined ? formatDuration(resource.elapsedDays) : null,
                     ]
                       .filter(Boolean)
@@ -175,13 +175,13 @@ export default function ComponentPanel({
               partId={part.id}
               initialKm={part.expectedLifeKm}
               initialDays={part.expectedLifeDays}
-              unit={units === "km" ? "км" : "миль"}
+              unit={"км"}
               onDone={() => setEditingLife(false)}
               onCancel={editingLife ? () => setEditingLife(false) : undefined}
             />
           ) : part ? (
             <button type="button" className={s.linkBtn} onClick={() => setEditingLife(true)}>
-              Изменить ресурс
+              Изменить срок службы
             </button>
           ) : null}
         </section>
@@ -217,7 +217,7 @@ export default function ComponentPanel({
                   </div>
                   <div className={`${s.eventMeta} numeric`}>
                     {[
-                      e.mileageKm !== undefined ? formatKm(e.mileageKm, units) : null,
+                      e.mileageKm !== undefined ? formatKm(e.mileageKm) : null,
                       e.costMinorUnits !== undefined ? formatMoney(e.costMinorUnits, e.currency) : null,
                     ]
                       .filter(Boolean)
@@ -408,7 +408,7 @@ type LifeFormProps = {
 
 function LifeForm({ partId, initialKm, initialDays, unit, onDone, onCancel }: LifeFormProps) {
   const updateInstalledPart = useGarage((st) => st.updateInstalledPart);
-  const [km, setKm] = useState(initialKm ? String(initialKm) : "");
+  const [km, setKm] = useState(initialKm ? intText(initialKm) : "");
   const [days, setDays] = useState(initialDays ? String(initialDays) : "");
   const [error, setError] = useState<string | null>(null);
 
@@ -421,7 +421,7 @@ function LifeForm({ partId, initialKm, initialDays, unit, onDone, onCancel }: Li
       return;
     }
     if ((kmNum !== undefined && !(kmNum > 0)) || (daysNum !== undefined && !(daysNum > 0))) {
-      setError("Ресурс должен быть больше нуля.");
+      setError("Срок службы должен быть больше нуля.");
       return;
     }
     updateInstalledPart(partId, { expectedLifeKm: kmNum, expectedLifeDays: daysNum });
@@ -440,7 +440,7 @@ function LifeForm({ partId, initialKm, initialDays, unit, onDone, onCancel }: Li
               inputMode="numeric"
               autoComplete="off"
               value={km}
-              onChange={(e) => setKm(e.target.value.replace(/[^\d\s]/g, "").replace(/\s+/g, " "))}
+              onChange={groupedChange(groupInt, setKm)}
             />
             <span className={d.suffix}>{unit}</span>
           </div>
@@ -455,7 +455,7 @@ function LifeForm({ partId, initialKm, initialDays, unit, onDone, onCancel }: Li
         {onCancel ? (
           <button type="button" className={d.ghostBtn} onClick={onCancel}>Отмена</button>
         ) : null}
-        <button type="submit" className={d.ghostBtn}>Сохранить ресурс</button>
+        <button type="submit" className={d.ghostBtn}>Сохранить срок службы</button>
       </div>
     </form>
   );

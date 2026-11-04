@@ -362,7 +362,7 @@ export const useGarage = create<GarageState>()(
         }
         if (event.type !== "observation" && mileage === undefined) return fail("Укажите пробег.");
         if (mileage !== undefined && vehicle.currentMileageKm !== undefined && mileage > vehicle.currentMileageKm) {
-          return fail(`Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}).`);
+          return fail(`Больше текущего пробега (${formatKm(vehicle.currentMileageKm)}).`);
         }
         const notes = patch.notes?.trim() || undefined;
         if (event.type === "observation" && !notes) return fail("Напишите текст заметки.");
@@ -377,7 +377,7 @@ export const useGarage = create<GarageState>()(
           mileage < previous.installedAtMileageKm
         ) {
           return fail(
-            `Пробег меньше, чем при прошлой замене (${formatKm(previous.installedAtMileageKm, vehicle.units)}).`,
+            `Пробег меньше, чем при прошлой замене (${formatKm(previous.installedAtMileageKm)}).`,
           );
         }
 
@@ -493,7 +493,7 @@ export const useGarage = create<GarageState>()(
             mileage < prevPart.installedAtMileageKm
           ) {
             return fail(
-              `Пробег меньше, чем при прошлой замене (${formatKm(prevPart.installedAtMileageKm, vehicle.units)}). Проверьте значение.`,
+              `Пробег меньше, чем при прошлой замене (${formatKm(prevPart.installedAtMileageKm)}). Проверьте значение.`,
             );
           }
           newPart = {

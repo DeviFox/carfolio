@@ -6,6 +6,7 @@ import { ArrowRightIcon, CloseIcon } from "./icons";
 import { useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
 import { assertNewerMileage, formatKm } from "@/lib/compute";
+import { groupInt, groupedChange, intText } from "@/lib/number-input";
 import type { Vehicle } from "@/lib/types";
 
 type Props = {
@@ -22,7 +23,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
 
   const updateMileage = useGarage((s) => s.updateMileage);
 
-  const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
+  const [mileage, setMileage] = useState(intText(vehicle.currentMileageKm));
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
@@ -30,7 +31,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const n = Number(mileage.replace(/\s/g, ""));
-    const err = assertNewerMileage(n, vehicle.currentMileageKm, vehicle.units);
+    const err = assertNewerMileage(n, vehicle.currentMileageKm);
     if (err) {
       setError(err);
       return;
@@ -55,7 +56,7 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
             <h2 className={s.title} id={titleId}>Обновить пробег</h2>
             <p className={s.subtitle}>
               {vehicle.currentMileageKm !== undefined
-                ? `Текущий: ${formatKm(vehicle.currentMileageKm, vehicle.units)}`
+                ? `Текущий: ${formatKm(vehicle.currentMileageKm)}`
                 : "Пробег ещё не указан."}
             </p>
           </div>
@@ -77,16 +78,12 @@ export default function UpdateMileageDialog({ open, onClose, vehicle }: Props) {
                 inputMode="numeric"
                 className={`${s.input} ${error ? s.invalid : ""}`}
                 value={mileage}
-                onChange={(e) =>
-                  setMileage(
-                    e.target.value.replace(/[^\d\s]/g, "").replace(/\s+/g, " "),
-                  )
-                }
+                onChange={groupedChange(groupInt, setMileage)}
                 aria-invalid={!!error}
                 aria-describedby={error ? "mu-err" : undefined}
                 required
               />
-              <span className={s.suffix}>{vehicle.units === "km" ? "км" : "миль"}</span>
+              <span className={s.suffix}>{"км"}</span>
             </div>
             {error ? (
               <span className={s.error} id="mu-err">{error}</span>

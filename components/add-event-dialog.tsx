@@ -7,6 +7,7 @@ import { useConfirmClose, useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
 import { componentLabel, findActiveInstalledPart, findComponentByName, formatKm } from "@/lib/compute";
 import { sortComponentsByName, systemForCategory, type ComponentPosition } from "@/lib/compute";
+import { groupInt, groupedChange, intText } from "@/lib/number-input";
 import { FLUIDS, POSITIONED_CATEGORIES } from "@/lib/types";
 import { PositionPicker } from "./position-picker";
 import type { Condition, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
@@ -34,7 +35,6 @@ import {
   SUBMIT_LABEL,
   TYPES,
   RepeatSummary,
-  digits,
   errorAttrs,
   formatLongDate,
   hasSameDayRecord,
@@ -82,7 +82,7 @@ export default function AddEventDialog({
   const [systemId, setSystemId] = useState(defaultSystemId ?? vehicleSystems[0]?.id ?? "");
   const [position, setPosition] = useState<ComponentPosition>({});
   const [date, setDate] = useState(today());
-  const [mileage, setMileage] = useState(vehicle.currentMileageKm !== undefined ? String(vehicle.currentMileageKm) : "");
+  const [mileage, setMileage] = useState(intText(vehicle.currentMileageKm));
   const templateCost = minorToText(template?.costMinorUnits);
   const templateNotes = template?.notes ?? "";
   const [cost, setCost] = useState(templateCost);
@@ -106,7 +106,7 @@ export default function AddEventDialog({
 
   if (!open) return null;
 
-  const unit = vehicle.units === "km" ? "км" : "миль";
+  const unit = "км";
   const isNote = type === "observation";
   const isFluid = type === "fluid_service";
   const isNew = !isNote && !isFluid && pick === NEW;
@@ -127,7 +127,6 @@ export default function AddEventDialog({
     ? selected.kind !== "inspectable" || !!prevPart?.expectedLifeKm || !!prevPart?.expectedLifeDays
     : true;
   const tracking = type === "replacement" && (track ?? trackAuto);
-  const showCost = type === "replacement" || type === "repair" || type === "fluid_service";
   const newSystem = vehicleSystems.find((x) => x.id === systemId);
   const positioned = isNew && !!newSystem && POSITIONED_CATEGORIES.includes(newSystem.category);
   const newPosition = positioned ? position : {};
@@ -161,7 +160,7 @@ export default function AddEventDialog({
     setErrors((e) => ({ ...e, component: undefined, name: undefined }));
     // A previous part's resource is the only grounded default for the new one.
     const prev = value && value !== NEW ? findActiveInstalledPart(value, installedParts) : undefined;
-    setLifeKm(prev?.expectedLifeKm ? String(prev.expectedLifeKm) : "");
+    setLifeKm(prev?.expectedLifeKm ? intText(prev.expectedLifeKm) : "");
     setLifeDays(prev?.expectedLifeDays ? String(prev.expectedLifeDays) : "");
   }
 
@@ -185,21 +184,21 @@ export default function AddEventDialog({
       if (!Number.isFinite(n) || n < 0) {
         e.mileage = "Введите пробег цифрами.";
       } else if (vehicle.currentMileageKm !== undefined && n > vehicle.currentMileageKm) {
-        e.mileage = `Больше текущего пробега (${formatKm(vehicle.currentMileageKm, vehicle.units)}). Сначала обновите пробег автомобиля.`;
+        e.mileage = `Больше текущего пробега (${formatKm(vehicle.currentMileageKm)}). Сначала обновите пробег автомобиля.`;
       }
     } else if (!isNote) {
       e.mileage = "Укажите пробег.";
     }
-    if (showCost && cost.trim()) {
+    if (cost.trim()) {
       const n = toNumber(cost);
       if (!Number.isFinite(n) || n < 0) e.cost = "Стоимость не может быть отрицательной.";
     }
     if (tracking && lifeKm.trim()) {
       const n = toNumber(lifeKm);
-      if (!Number.isFinite(n) || n <= 0) e.lifeKm = "Ресурс должен быть больше нуля.";
+      if (!Number.isFinite(n) || n <= 0) e.lifeKm = "Срок службы должен быть больше нуля.";
     }
     if (tracking && lifeDays.trim() && !(toNumber(lifeDays) > 0)) {
-      e.lifeDays = "Ресурс должен быть больше нуля.";
+      e.lifeDays = "Срок службы должен быть больше нуля.";
     }
     if (isNote && !notes.trim()) e.notes = "Напишите текст заметки.";
     return e;
@@ -215,7 +214,7 @@ export default function AddEventDialog({
 
     submittingRef.current = true;
     setSubmitting(true);
-    const costMinor = showCost && cost.trim() ? Math.round(toNumber(cost) * 100) : undefined;
+    const costMinor = cost.trim() ? Math.round(toNumber(cost) * 100) : undefined;
     const result = addRecord({
       vehicleId: vehicle.id,
       type,
@@ -276,7 +275,7 @@ export default function AddEventDialog({
 
         <form className={s.form} onSubmit={onSubmit} noValidate>
           {compact ? (
-            <RepeatSummary summary={resourceLine(tracking, lifeKm, lifeDays, vehicle.units)} onEdit={() => setExpanded(true)} />
+            <RepeatSummary summary={resourceLine(tracking, lifeKm, lifeDays)} onEdit={() => setExpanded(true)} />
           ) : (
             <>
             <div className={s.field}>
@@ -422,7 +421,7 @@ export default function AddEventDialog({
                   className={`${s.input} ${errors.mileage ? s.invalid : ""}`}
                   {...errorAttrs("ar-mileage", errors.mileage)}
                   value={mileage}
-                  onChange={(e) => setMileage(digits(e.target.value))}
+                  onChange={groupedChange(groupInt, setMileage)}
                   autoComplete="off"
                 />
                 <span className={s.suffix}>{unit}</span>
@@ -449,17 +448,15 @@ export default function AddEventDialog({
             </div>
           ) : null}
 
-          {showCost ? (
-            <CostFields
-              inputRef={costRef}
-              cost={cost}
-              currency={currency}
-              onCostChange={setCost}
-              onCurrencyChange={setCurrency}
-              carried={costCarried}
-              error={errors.cost}
-            />
-          ) : null}
+          <CostFields
+            inputRef={costRef}
+            cost={cost}
+            currency={currency}
+            onCostChange={setCost}
+            onCurrencyChange={setCurrency}
+            carried={costCarried}
+            error={errors.cost}
+          />
 
           {type === "replacement" && !compact ? (
             <ResourceFields

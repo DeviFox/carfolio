@@ -1,6 +1,7 @@
 export type ID = string;
 
-export type Units = "km" | "mi";
+// Only kilometres. The field stays because the server stores it.
+export type Units = "km";
 
 export type SystemCategory =
   | "engine"
@@ -24,7 +25,7 @@ export const AXLE_LABEL: Record<Axle, string> = { front: "Перед", rear: "З
 export const SIDE_LABEL: Record<Side, string> = { left: "Левый", right: "Правый" };
 
 // Systems whose parts come in pairs or per wheel; only these offer a position.
-export const POSITIONED_CATEGORIES: SystemCategory[] = ["suspension", "brakes", "tires", "electrical"];
+export const POSITIONED_CATEGORIES: SystemCategory[] = ["suspension", "brakes", "tires"];
 
 export type MaintenanceType =
   | "replacement"

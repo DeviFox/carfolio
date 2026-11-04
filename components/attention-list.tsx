@@ -5,19 +5,17 @@ import s from "./car-ledger.module.css";
 import StatusPill from "./status-pill";
 import { PositionBadge } from "./position-picker";
 import { resourceSummary } from "@/lib/compute";
-import type { Vehicle } from "@/lib/types";
 import type { ComponentRow } from "./system-list";
 
 const VISIBLE = 5;
 
 type Props = {
   rows: ComponentRow[];
-  units: Vehicle["units"];
   onSelect: (row: ComponentRow) => void;
 };
 
 // Names what the old banner only counted: the parts due or overdue, worst first.
-export default function AttentionList({ rows, units, onSelect }: Props) {
+export default function AttentionList({ rows, onSelect }: Props) {
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? rows : rows.slice(0, VISIBLE);
 
@@ -32,7 +30,7 @@ export default function AttentionList({ rows, units, onSelect }: Props) {
       ) : (
         <ul className={s.attentionList}>
           {shown.map((row) => {
-            const summary = resourceSummary(row.resource, units);
+            const summary = resourceSummary(row.resource);
             return (
               <li key={row.component.id}>
                 <button type="button" className={s.attentionItem} onClick={() => onSelect(row)}>

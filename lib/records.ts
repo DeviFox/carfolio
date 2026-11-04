@@ -80,7 +80,6 @@ export function componentDeleteEffect(componentId: ID, events: MaintenanceEvent[
 export function deleteEffect(
   event: MaintenanceEvent,
   parts: InstalledPart[],
-  units: Vehicle["units"],
 ): string | null {
   if (event.type === "inspection") return "Результат осмотра тоже удалится.";
   const part = event.installedPartId ? parts.find((p) => p.id === event.installedPartId) : undefined;
@@ -88,14 +87,14 @@ export function deleteEffect(
   const active = !part.removedAtDate && part.removedAtMileageKm === undefined;
   if (!active) return null;
   const previous = retiredBy(part, parts);
-  if (!previous) return "Данных об установке не останется, ресурс перестанет считаться.";
+  if (!previous) return "Данных об установке не останется, срок службы перестанет считаться.";
   const when = [
     previous.installedAtDate
       ? new Date(previous.installedAtDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })
       : null,
-    previous.installedAtMileageKm !== undefined ? formatKm(previous.installedAtMileageKm, units) : null,
+    previous.installedAtMileageKm !== undefined ? formatKm(previous.installedAtMileageKm) : null,
   ]
     .filter(Boolean)
     .join(" · ");
-  return `Ресурс снова будет считаться от прошлой замены${when ? ` (${when})` : ""}.`;
+  return `Срок службы снова будет считаться от прошлой замены${when ? ` (${when})` : ""}.`;
 }

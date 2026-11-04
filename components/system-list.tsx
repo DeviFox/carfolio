@@ -12,7 +12,7 @@ import {
   type ResourceSignal,
   type StatusLabel,
 } from "@/lib/compute";
-import type { Component, InstalledPart, SystemCategory, Vehicle, VehicleSystem } from "@/lib/types";
+import type { Component, InstalledPart, SystemCategory, VehicleSystem } from "@/lib/types";
 
 export type ComponentRow = {
   component: Component;
@@ -54,7 +54,6 @@ function countLine(rows: ComponentRow[]): string {
 
 type Props = {
   groups: SystemGroup[];
-  units: Vehicle["units"];
   expanded: Set<string>;
   flashId: string | null;
   onToggle: (systemId: string) => void;
@@ -65,7 +64,6 @@ type Props = {
 
 export default function SystemList({
   groups,
-  units,
   expanded,
   flashId,
   onToggle,
@@ -117,7 +115,6 @@ export default function SystemList({
                       <ComponentLine
                         key={row.component.id}
                         row={row}
-                        units={units}
                         flash={flashId === row.component.id}
                         onOpen={() => onOpenComponent(row.component.id)}
                       />
@@ -143,23 +140,25 @@ export default function SystemList({
 
 function ComponentLine({
   row,
-  units,
   flash,
   onOpen,
 }: {
   row: ComponentRow;
-  units: Vehicle["units"];
   flash: boolean;
   onOpen: () => void;
 }) {
   const { component, part, resource, status } = row;
   // Everything about the resource sits under its bar; the bar itself has a
   // fixed width and start, so text of any length never moves it.
-  const summary = resourceSummary(resource, units) ?? "нет данных для расчёта";
+  const summary =
+    resourceSummary(resource) ??
+    (resource.kind === "unknown" && resource.reason === "no_expected_life"
+      ? "срок службы не задан"
+      : "нет данных для расчёта");
   const over = resource.kind === "known" && resource.overdue;
   const installed =
     part?.installedAtMileageKm !== undefined
-      ? `установлено на ${formatKm(part.installedAtMileageKm, units)}`
+      ? `установлено на ${formatKm(part.installedAtMileageKm)}`
       : null;
   return (
     <li id={`component-${component.id}`} className={s.compItem}>

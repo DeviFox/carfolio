@@ -306,13 +306,13 @@ export default function CarPageClient() {
 										{vehicle.currentMileageKm !== undefined ? (
 											<div className={`${styles.mileageValue} numeric mono`}>
 												{digitGroups(vehicle.currentMileageKm)}
-												<span className={styles.mileageUnit}>{vehicle.units === "km" ? "км" : "миль"}</span>
+												<span className={styles.mileageUnit}>{"км"}</span>
 											</div>
 										) : (
 											<div className={styles.mileageMissing}>Не указан</div>
 										)}
 										{vehicle.currentMileageKm === undefined ? (
-											<div className={styles.mileageAge}>Без него ресурс по пробегу не считается.</div>
+											<div className={styles.mileageAge}>Без него срок службы по пробегу не считается.</div>
 										) : mileageAt ? (
 											// Every forecast is measured from this number, so say how fresh it is.
 											<div className={`${styles.mileageAge} ${mileageStale ? styles.mileageStale : ""}`}>
@@ -331,7 +331,6 @@ export default function CarPageClient() {
 								{hasComponents ? (
 									<AttentionList
 										rows={attention}
-										units={vehicle.units}
 										onSelect={(row) => reveal(row.system.id, row.component.id)}
 									/>
 								) : null}
@@ -345,7 +344,6 @@ export default function CarPageClient() {
 								) : (
 									<SystemList
 										groups={groups}
-										units={vehicle.units}
 										expanded={expanded}
 										flashId={flashId}
 										onToggle={toggleSystem}
@@ -359,7 +357,6 @@ export default function CarPageClient() {
 							<RecentWork
 								events={vehicleEvents}
 								components={components}
-								units={vehicle.units}
 								onOpen={(e) => setEditEventId(e.id)}
 							/>
 						</div>

@@ -14,6 +14,7 @@ import DeleteCar from "./delete-car";
 import { ArrowRightIcon, CloseIcon } from "./icons";
 import { useGarage } from "@/lib/store";
 import { lockPageScroll } from "@/lib/use-modal";
+import { groupInt, groupedChange, intText } from "@/lib/number-input";
 import { BODY_TYPE_LABEL, BodyType, Vehicle } from "@/lib/types";
 
 // Body types with a redesigned, non-boxy illustration. The rest still render
@@ -23,7 +24,6 @@ const READY_BODY_TYPES: ReadonlySet<BodyType> = new Set([
   "sedan", "hatchback", "wagon", "coupe",
 ]);
 
-type Units = "km" | "mi";
 
 type DraftErrors = Partial<Record<"make" | "model" | "year" | "mileage", string>>;
 
@@ -53,9 +53,8 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
   const [fuel, setFuel] = useState(editVehicle?.fuelType ?? "");
   const [engine, setEngine] = useState(editVehicle?.engine ?? "");
   const [mileage, setMileage] = useState(
-    editVehicle?.currentMileageKm !== undefined ? String(editVehicle.currentMileageKm) : "",
+    intText(editVehicle?.currentMileageKm),
   );
-  const [units, setUnits] = useState<Units>(editVehicle?.units ?? "km");
   const [bodyType, setBodyType] = useState<BodyType | "">(
     editVehicle?.bodyType ?? "",
   );
@@ -68,7 +67,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
     setFuel("");
     setEngine("");
     setMileage("");
-    setUnits("km");
     setBodyType("");
     setErrors({});
   }, []);
@@ -93,9 +91,8 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       setFuel(editVehicle.fuelType ?? "");
       setEngine(editVehicle.engine ?? "");
       setMileage(
-        editVehicle.currentMileageKm !== undefined ? String(editVehicle.currentMileageKm) : "",
+        intText(editVehicle.currentMileageKm),
       );
-      setUnits(editVehicle.units);
       setBodyType(editVehicle.bodyType ?? "");
     }
     setErrors({});
@@ -157,7 +154,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
       engine: engine.trim() || undefined,
       bodyType: (bodyType || undefined) as BodyType | undefined,
       currentMileageKm: mileage.trim() ? Number(mileage.replace(/\s/g, "")) : undefined,
-      units,
+      units: "km" as const,
     };
     let savedId: string;
     if (isEdit && editVehicle) {
@@ -390,14 +387,7 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                 inputMode="numeric"
                 className={`${styles.input} ${errors.mileage ? styles.invalid : ""} numeric mono`}
                 value={mileage}
-                onChange={(e) =>
-                  setMileage(
-                    e.target.value
-                      .replace(/[^\d\s]/g, "")
-                      .replace(/\s+/g, " ")
-                      .trimStart(),
-                  )
-                }
+                onChange={groupedChange(groupInt, setMileage)}
                 placeholder="178 430"
                 autoComplete="off"
                 aria-invalid={!!errors.mileage}
@@ -412,35 +402,6 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
                   Актуальное значение с одометра — вы сможете уточнить позже.
                 </span>
               )}
-            </div>
-            <div className={styles.field}>
-              <span className={styles.label} id="units-label">
-                Единицы
-              </span>
-              <div
-                className={styles.units}
-                role="radiogroup"
-                aria-labelledby="units-label"
-              >
-                <button
-                  type="button"
-                  className={`${styles.unitBtn} ${units === "km" ? styles.on : ""}`}
-                  role="radio"
-                  aria-checked={units === "km"}
-                  onClick={() => setUnits("km")}
-                >
-                  Километры
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.unitBtn} ${units === "mi" ? styles.on : ""}`}
-                  role="radio"
-                  aria-checked={units === "mi"}
-                  onClick={() => setUnits("mi")}
-                >
-                  Мили
-                </button>
-              </div>
             </div>
           </div>
 

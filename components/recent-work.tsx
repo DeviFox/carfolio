@@ -3,20 +3,19 @@
 import { useState } from "react";
 import styles from "@/app/car/page.module.css";
 import { EVENT_TYPE_LABEL, formatKm, formatMoney } from "@/lib/compute";
-import type { Component, MaintenanceEvent, Vehicle } from "@/lib/types";
+import type { Component, MaintenanceEvent } from "@/lib/types";
 
 const VISIBLE = 5;
 
 type Props = {
   events: MaintenanceEvent[]; // newest first
   components: Component[];
-  units: Vehicle["units"];
   onOpen: (event: MaintenanceEvent) => void;
 };
 
 // The car's maintenance timeline. Shows the latest five until История ships;
 // every row opens the record so a typo can be fixed or removed.
-export default function RecentWork({ events, components, units, onOpen }: Props) {
+export default function RecentWork({ events, components, onOpen }: Props) {
   const [showAll, setShowAll] = useState(false);
   if (events.length === 0) return null;
   const shown = showAll ? events : events.slice(0, VISIBLE);
@@ -56,7 +55,7 @@ export default function RecentWork({ events, components, units, onOpen }: Props)
                   </span>
                   <span className={`${styles.eventMeta} numeric`}>
                     {[
-                      e.mileageKm !== undefined ? formatKm(e.mileageKm, units) : null,
+                      e.mileageKm !== undefined ? formatKm(e.mileageKm) : null,
                       e.costMinorUnits !== undefined ? formatMoney(e.costMinorUnits, e.currency) : null,
                     ]
                       .filter(Boolean)

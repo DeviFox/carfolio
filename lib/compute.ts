@@ -132,14 +132,16 @@ export function componentStatus(
   }
 
   if (resource.kind === "unknown") {
-    return { label: "unknown", text: "Нет данных", reason: "no_data" };
+    // Not set is the owner's choice, not missing data: say which it is.
+    const text = resource.reason === "no_expected_life" ? "Срок не задан" : "Нет данных";
+    return { label: "unknown", text, reason: "no_data" };
   }
 
   if (resource.overdue) {
     return { label: "critical", text: "Просрочено", reason: "computed" };
   }
   if (resource.ratio < 0.2) {
-    return { label: "attention", text: "Низкий ресурс", reason: "computed" };
+    return { label: "attention", text: "Скоро замена", reason: "computed" };
   }
   return { label: "ok", text: "В норме", reason: "computed" };
 }
@@ -205,23 +207,22 @@ export function formatDuration(days: number): string {
 // One honest line about the dimension (mileage or time) that runs out first.
 export function resourceSummary(
   resource: ResourceSignal,
-  units: Vehicle["units"] = "km",
 ): string | null {
   if (resource.kind !== "known") return null;
   // Past the life: say by how much (the pill already says "Просрочено").
   if (resource.overKm !== undefined && resource.overKm > 0) {
-    return `+${formatKm(resource.overKm, units)} сверх ресурса`;
+    return `+${formatKm(resource.overKm)} сверх срока`;
   }
   if (resource.overDays !== undefined && resource.overDays > 0) {
     return `+${formatDuration(resource.overDays)} сверх срока`;
   }
-  if (resource.overKm === 0 || resource.overDays === 0) return "ресурс исчерпан";
+  if (resource.overKm === 0 || resource.overDays === 0) return "пора менять";
   const share = (left?: number, used?: number) =>
     left !== undefined && used !== undefined ? left / (left + used) : Infinity;
   const kmShare = share(resource.remainingKm, resource.drivenKm);
   const daysShare = share(resource.remainingDays, resource.elapsedDays);
   return kmShare <= daysShare
-    ? `ещё ${formatKm(resource.remainingKm!, units)}`
+    ? `ещё ${formatKm(resource.remainingKm!)}`
     : `ещё ${formatDuration(resource.remainingDays!)}`;
 }
 
@@ -313,9 +314,8 @@ export function latestInspectionFor(
     .sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
-export function formatKm(n: number, units: Vehicle["units"] = "km"): string {
-  const unit = units === "km" ? "км" : "миль";
-  return `${n.toLocaleString("ru-RU")} ${unit}`;
+export function formatKm(n: number): string {
+  return `${n.toLocaleString("ru-RU")} км`;
 }
 
 export function formatRatioPercent(ratio: number): string {
@@ -357,13 +357,12 @@ export function sortComponentsByName(components: Component[]): Component[] {
 export function assertNewerMileage(
   nextMileageKm: number,
   lastConfirmedMileageKm: number | undefined,
-  units: Vehicle["units"] = "km",
 ): string | null {
   if (!Number.isFinite(nextMileageKm) || nextMileageKm < 0) {
     return "Введите пробег цифрами.";
   }
   if (lastConfirmedMileageKm !== undefined && nextMileageKm < lastConfirmedMileageKm) {
-    return `Новый пробег меньше текущего (${formatKm(lastConfirmedMileageKm, units)}). Пробег не может уменьшаться.`;
+    return `Новый пробег меньше текущего (${formatKm(lastConfirmedMileageKm)}). Пробег не может уменьшаться.`;
   }
   return null;
 }

@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import s from "./dialog.module.css";
 import { CloseIcon } from "./icons";
-import { CURRENCIES, digits, errorAttrs, minorToText, toNumber, today } from "./add-event-parts";
+import { CURRENCIES, errorAttrs, minorToText, toNumber, today } from "./add-event-parts";
+import { groupInt, groupMoney, groupedChange, intText } from "@/lib/number-input";
 import { useConfirmClose, useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
 import { deleteEffect } from "@/lib/records";
@@ -18,7 +19,6 @@ type Props = {
 
 type Errors = Partial<Record<"date" | "mileage" | "cost" | "notes", string>>;
 
-const COSTED = new Set(["replacement", "repair", "fluid_service"]);
 
 // Edit or delete one recorded event. Type and component stay fixed: changing
 // them is a different record, so the owner deletes this one and adds another.
@@ -33,15 +33,14 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
   const deleteEvent = useGarage((st) => st.deleteEvent);
 
   const isNote = event.type === "observation";
-  const showCost = COSTED.has(event.type) || event.costMinorUnits !== undefined;
-  const unit = vehicle.units === "km" ? "км" : "миль";
+  const unit = "км";
   const names = event.componentIds
     .map((id) => components.find((c) => c.id === id)?.name)
     .filter(Boolean)
     .join(", ");
 
   const [date, setDate] = useState(event.date.slice(0, 10));
-  const [mileage, setMileage] = useState(event.mileageKm !== undefined ? String(event.mileageKm) : "");
+  const [mileage, setMileage] = useState(intText(event.mileageKm));
   const [cost, setCost] = useState(minorToText(event.costMinorUnits));
   const [currency, setCurrency] = useState(event.currency ?? "RUB");
   const [notes, setNotes] = useState(event.notes ?? "");
@@ -65,7 +64,7 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
     } else if (!isNote) {
       e.mileage = "Укажите пробег.";
     }
-    if (showCost && cost.trim()) {
+    if (cost.trim()) {
       const n = toNumber(cost);
       if (!Number.isFinite(n) || n < 0) e.cost = "Стоимость не может быть отрицательной.";
     }
@@ -79,7 +78,7 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
     setErrors(next);
     setFormError(null);
     if (Object.keys(next).length !== 0) return;
-    const costMinor = showCost && cost.trim() ? Math.round(toNumber(cost) * 100) : undefined;
+    const costMinor = cost.trim() ? Math.round(toNumber(cost) * 100) : undefined;
     const result = updateEvent(event.id, {
       date,
       mileageKm: mileage.trim() ? toNumber(mileage) : undefined,
@@ -94,7 +93,7 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
     onClose();
   }
 
-  const effect = deleteEffect(event, installedParts, vehicle.units);
+  const effect = deleteEffect(event, installedParts);
 
   return (
     <div className={`${s.overlay} ${stacked ? s.stacked : ""}`} onClick={overlayClick} role="presentation">
@@ -149,7 +148,7 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
                   className={`${s.input} ${errors.mileage ? s.invalid : ""}`}
                   {...errorAttrs("ev-mileage", errors.mileage)}
                   value={mileage}
-                  onChange={(e) => setMileage(digits(e.target.value))}
+                  onChange={groupedChange(groupInt, setMileage)}
                 />
                 <span className={s.suffix}>{unit}</span>
               </div>
@@ -157,34 +156,32 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
             </div>
           </div>
 
-          {showCost ? (
-            <div className={s.row}>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="ev-cost">
-                  Стоимость <span className={s.optional}>опционально</span>
-                </label>
-                <input
-                  id="ev-cost"
-                  type="text"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  className={`${s.input} ${errors.cost ? s.invalid : ""}`}
-                  {...errorAttrs("ev-cost", errors.cost)}
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value.replace(/[^\d\s,.]/g, "").replace(/\s+/g, " "))}
-                />
-                {errors.cost && <span className={s.error} id="ev-cost-error">{errors.cost}</span>}
-              </div>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="ev-cur">Валюта</label>
-                <select id="ev-cur" className={s.select} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
+          <div className={s.row}>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="ev-cost">
+                Стоимость <span className={s.optional}>опционально</span>
+              </label>
+              <input
+                id="ev-cost"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                className={`${s.input} ${errors.cost ? s.invalid : ""}`}
+                {...errorAttrs("ev-cost", errors.cost)}
+                value={cost}
+                onChange={groupedChange(groupMoney, setCost)}
+              />
+              {errors.cost && <span className={s.error} id="ev-cost-error">{errors.cost}</span>}
             </div>
-          ) : null}
+            <div className={s.field}>
+              <label className={s.label} htmlFor="ev-cur">Валюта</label>
+              <select id="ev-cur" className={s.select} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <div className={s.field}>
             <label className={s.label} htmlFor="ev-notes">

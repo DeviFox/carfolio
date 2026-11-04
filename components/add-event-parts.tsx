@@ -1,6 +1,7 @@
 import { RefObject, useEffect, useState } from "react";
 import s from "./dialog.module.css";
 import { findActiveInstalledPart, formatDuration, formatKm } from "@/lib/compute";
+import { groupInt, groupMoney, groupedChange, intText } from "@/lib/number-input";
 import type { Condition, InstalledPart, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Field = "component" | "name" | "system" | "date" | "mileage" | "cost" | "lifeKm" | "lifeDays" | "notes";
@@ -43,15 +44,12 @@ export const NEW = "__new";
 // Catalog fluid the car doesn't have as a component yet: "__fluid:engine_oil".
 export const FLUID = "__fluid:";
 
-export const digits = (v: string) => v.replace(/[^\d\s]/g, "").replace(/\s+/g, " ");
 export const toNumber = (v: string) => Number(v.replace(/\s/g, "").replace(",", "."));
 // Ties a field to its error message for assistive tech: the error span carries `${id}-error`.
 export const errorAttrs = (id: string, error?: string) =>
   error ? { "aria-invalid": true as const, "aria-describedby": `${id}-error` } : {};
 
-// 845000 → "8450", 150050 → "1500,5": money as the owner types it.
-export const minorToText = (minor?: number) =>
-  minor !== undefined ? String(minor / 100).replace(".", ",") : "";
+export { moneyText as minorToText } from "@/lib/number-input";
 
 // Local calendar date: toISOString() is UTC and gives yesterday after local midnight east of Greenwich.
 export const today = () => {
@@ -89,7 +87,7 @@ export function RepeatSummary({ summary, onEdit }: { summary: string; onEdit: ()
         type="button"
         className={s.linkBtn}
         onClick={onEdit}
-        aria-label="Изменить тип, компонент и ресурс"
+        aria-label="Изменить тип, компонент и срок службы"
       >
         Изменить
       </button>
@@ -209,7 +207,7 @@ export function ResourceFields({
             checked={tracking}
             onChange={(e) => onTrackingChange(e.target.checked)}
           />
-          Отслеживать ресурс
+          Отслеживать срок службы
         </label>
       </div>
 
@@ -217,7 +215,7 @@ export function ResourceFields({
         <div className={s.field}>
           <div className={s.row}>
             <div className={s.field}>
-              <label className={s.label} htmlFor="ar-life-km">Ресурс по пробегу</label>
+              <label className={s.label} htmlFor="ar-life-km">Срок службы по пробегу</label>
               <div className={s.suffixInput}>
                 <input
                   id="ar-life-km"
@@ -226,7 +224,7 @@ export function ResourceFields({
                   className={`${s.input} ${errors.lifeKm ? s.invalid : ""}`}
                   {...errorAttrs("ar-life-km", errors.lifeKm)}
                   value={lifeKm}
-                  onChange={(e) => onLifeKmChange(digits(e.target.value))}
+                  onChange={groupedChange(groupInt, onLifeKmChange)}
                   autoComplete="off"
                 />
                 <span className={s.suffix}>{unit}</span>
@@ -234,7 +232,7 @@ export function ResourceFields({
               {errors.lifeKm && <span className={s.error} id="ar-life-km-error">{errors.lifeKm}</span>}
             </div>
             <div className={s.field}>
-              <label className={s.label} htmlFor="ar-life-days">Ресурс по времени</label>
+              <label className={s.label} htmlFor="ar-life-days">Срок службы по времени</label>
               <DaysInput
                 id="ar-life-days"
                 value={lifeDays}
@@ -289,7 +287,7 @@ export function CostFields({
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "ar-cost-error" : carried ? "ar-cost-carried" : undefined}
           value={cost}
-          onChange={(e) => onCostChange(e.target.value.replace(/[^\d\s,.]/g, "").replace(/\s+/g, " "))}
+          onChange={groupedChange(groupMoney, onCostChange)}
         />
         {error ? (
           <span className={s.error} id="ar-cost-error">{error}</span>
@@ -356,7 +354,8 @@ export function lifeOf(
   key: "expectedLifeKm" | "expectedLifeDays",
 ): string {
   const value = componentId ? findActiveInstalledPart(componentId, parts)?.[key] : undefined;
-  return value ? String(value) : "";
+  if (!value) return "";
+  return key === "expectedLifeKm" ? intText(value) : String(value);
 }
 
 // Repeat-mode summary of the resource the new part inherits.
@@ -364,12 +363,11 @@ export function resourceLine(
   tracking: boolean,
   lifeKm: string,
   lifeDays: string,
-  units: Vehicle["units"],
 ): string {
-  if (!tracking) return "Ресурс не отслеживается";
+  if (!tracking) return "Срок службы не отслеживается";
   const parts = [
-    lifeKm.trim() ? formatKm(toNumber(lifeKm), units) : null,
+    lifeKm.trim() ? formatKm(toNumber(lifeKm)) : null,
     lifeDays.trim() ? formatDuration(toNumber(lifeDays)) : null,
   ].filter(Boolean);
-  return parts.length ? `Ресурс как у прошлой детали: ${parts.join(" · ")}` : "Ресурс не задан";
+  return parts.length ? `Срок службы как у прошлой детали: ${parts.join(" · ")}` : "Срок службы не задан";
 }

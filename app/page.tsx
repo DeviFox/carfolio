@@ -190,7 +190,7 @@ export default function Page() {
                                 .join(" · ") || "—"}
                             </div>
                             {v.currentMileageKm !== undefined ? (
-                              <div className={`${styles.carMileage} numeric mono`}>{formatKm(v.currentMileageKm, v.units)}</div>
+                              <div className={`${styles.carMileage} numeric mono`}>{formatKm(v.currentMileageKm)}</div>
                             ) : (
                               <div className={styles.carMileageMissing}>Пробег не указан</div>
                             )}
@@ -204,7 +204,7 @@ export default function Page() {
                                 : health.known > 0
                                   ? `Отслеживается ${health.known} ${plural(health.known, "деталь", "детали", "деталей")}`
                                   : health.total > 0
-                                    ? "Ресурс деталей не задан"
+                                    ? "Срок службы деталей не задан"
                                     : "Добавьте первую замену"}
                             </span>
                           </div>
