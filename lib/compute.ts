@@ -331,6 +331,7 @@ export function formatMoney(minorUnits: number, currency?: string): string {
 
 export const EVENT_TYPE_LABEL: Record<MaintenanceType, string> = {
   replacement: "Замена",
+  purchase: "Покупка",
   inspection: "Осмотр",
   repair: "Ремонт",
   fluid_service: "Долив жидкости",

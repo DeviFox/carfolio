@@ -27,6 +27,7 @@ import {
   type AddRecordInput,
   type AddRecordResult,
   type EventPatch,
+  installsPart,
   kindForNewComponent,
   retiredBy,
 } from "./records";
@@ -485,7 +486,7 @@ export const useGarage = create<GarageState>()(
 
         let newPart: InstalledPart | undefined;
         let prevPart: InstalledPart | undefined;
-        if (input.type === "replacement" && component) {
+        if (installsPart(input.type) && component) {
           prevPart = created ? undefined : findActiveInstalledPart(component.id, st.installedParts);
           if (
             prevPart?.installedAtMileageKm !== undefined &&

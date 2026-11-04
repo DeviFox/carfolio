@@ -9,6 +9,7 @@ export type Errors = Partial<Record<Field, string>>;
 
 export const TYPES: { value: MaintenanceType; label: string }[] = [
   { value: "replacement", label: "Замена" },
+  { value: "purchase", label: "Покупка" },
   { value: "repair", label: "Ремонт" },
   { value: "inspection", label: "Осмотр" },
   { value: "fluid_service", label: "Долив жидкости" },
@@ -16,15 +17,17 @@ export const TYPES: { value: MaintenanceType; label: string }[] = [
 ];
 
 export const COMPONENT_LABEL: Record<MaintenanceType, string> = {
-  replacement: "Что заменили?",
-  repair: "Что ремонтировали?",
-  inspection: "Что проверили?",
-  fluid_service: "Что долили?",
+  replacement: "Что было заменено?",
+  purchase: "Что было куплено?",
+  repair: "Что было отремонтировано?",
+  inspection: "Что было проверено?",
+  fluid_service: "Что было долито?",
   observation: "К чему относится",
 };
 
 export const SUBMIT_LABEL: Record<MaintenanceType, string> = {
   replacement: "Сохранить замену",
+  purchase: "Сохранить покупку",
   repair: "Сохранить ремонт",
   inspection: "Сохранить осмотр",
   fluid_service: "Сохранить запись",

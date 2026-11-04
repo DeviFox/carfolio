@@ -26,7 +26,7 @@ var (
 	componentKinds   = []string{"consumable", "replaceable", "inspectable"}
 	axles            = []string{"front", "rear"}
 	sides            = []string{"left", "right"}
-	eventTypes       = []string{"replacement", "inspection", "repair", "fluid_service", "observation"}
+	eventTypes       = []string{"replacement", "purchase", "inspection", "repair", "fluid_service", "observation"}
 	mileageSources   = []string{"owner", "service", "estimate"}
 	conditions       = []string{"good", "worn", "critical", "unknown"}
 	priorities       = []string{"low", "normal", "high"}

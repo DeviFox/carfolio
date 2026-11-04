@@ -44,6 +44,7 @@ import {
   toNumber,
   today,
 } from "./add-event-parts";
+import { installsPart } from "@/lib/records";
 
 export default function AddEventDialog({
   open,
@@ -109,14 +110,13 @@ export default function AddEventDialog({
   const unit = "км";
   const isNote = type === "observation";
   const isFluid = type === "fluid_service";
+  const installs = installsPart(type);
   const isNew = !isNote && !isFluid && pick === NEW;
   const fluidComponent = (key: string) => vehicleComponents.find((c) => c.fluid === key);
-  // Fluids come only from the catalog: they are topped up, replaced or inspected, never repaired.
-  const choices = vehicleComponents.filter((c) =>
-    isFluid ? !!c.fluid : type === "repair" ? !c.fluid : true,
-  );
-  const missingFluids =
-    isNote || type === "repair" ? [] : FLUIDS.filter((f) => !fluidComponent(f.key));
+  // Fluids come only from the catalog: they are topped up, replaced or inspected, never repaired or bought.
+  const noFluids = type === "repair" || type === "purchase";
+  const choices = vehicleComponents.filter((c) => (isFluid ? !!c.fluid : noFluids ? !c.fluid : true));
+  const missingFluids = isNote || noFluids ? [] : FLUIDS.filter((f) => !fluidComponent(f.key));
   const pickedFluid = missingFluids.find((f) => FLUID + f.key === pick);
   const fluidSystem = pickedFluid ? systemForCategory(vehicleSystems, pickedFluid.category) : undefined;
   const selected = isNew ? undefined : choices.find((c) => c.id === pick);
@@ -126,7 +126,8 @@ export default function AddEventDialog({
   const trackAuto = selected
     ? selected.kind !== "inspectable" || !!prevPart?.expectedLifeKm || !!prevPart?.expectedLifeDays
     : true;
-  const tracking = type === "replacement" && (track ?? trackAuto);
+  // A purchase is often a one-off (a spare wheel), so its life is opt-in.
+  const tracking = installs && (track ?? (type === "replacement" && trackAuto));
   const newSystem = vehicleSystems.find((x) => x.id === systemId);
   const positioned = isNew && !!newSystem && POSITIONED_CATEGORIES.includes(newSystem.category);
   const newPosition = positioned ? position : {};
@@ -458,7 +459,7 @@ export default function AddEventDialog({
             error={errors.cost}
           />
 
-          {type === "replacement" && !compact ? (
+          {installs && !compact ? (
             <ResourceFields
               tracking={tracking}
               onTrackingChange={setTrack}

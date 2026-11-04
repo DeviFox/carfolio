@@ -29,6 +29,7 @@ export const POSITIONED_CATEGORIES: SystemCategory[] = ["suspension", "brakes", 
 
 export type MaintenanceType =
   | "replacement"
+  | "purchase"
   | "inspection"
   | "repair"
   | "fluid_service"

@@ -22,7 +22,7 @@ export interface AddRecordInput {
   costMinorUnits?: number;
   currency?: string;
   notes?: string;
-  // Only for replacement; undefined means the new part is not tracked.
+  // Only for records that install a part; undefined means it is not tracked.
   resource?: { expectedLifeKm?: number; expectedLifeDays?: number };
   // Only for inspection; saved as a ComponentInspection.
   condition?: Condition;
@@ -48,9 +48,14 @@ export function retiredBy(part: InstalledPart, parts: InstalledPart[]): Installe
   );
 }
 
+// A replacement swaps the part in; a purchase brings one the car didn't
+// have (a spare wheel). Both install a part, so both can track its life.
+export const installsPart = (type: MaintenanceType) => type === "replacement" || type === "purchase";
+
 export function kindForNewComponent(type: MaintenanceType, tracked: boolean): ComponentKind {
   switch (type) {
     case "replacement":
+    case "purchase":
       return tracked ? "consumable" : "replaceable";
     case "inspection":
       return "inspectable";
