@@ -66,7 +66,7 @@ export default function Page() {
       g.addSystem({ vehicleId: v.id, name: "Шины", category: "tires" });
       g.addSystem({ vehicleId: v.id, name: "Электрика", category: "electrical" });
       g.addSystem({ vehicleId: v.id, name: "Прочее", category: "other" });
-      router.replace(`/car/${v.id}`);
+      router.replace(`/car?id=${encodeURIComponent(v.id)}`);
       return;
     }
     if (params.get("seed") === "demo") {
@@ -112,7 +112,7 @@ export default function Page() {
           currency: "RUB",
           notes: "5W-30, фильтр заменён вместе",
         });
-        router.replace(`/car/${v.id}`);
+        router.replace(`/car?id=${encodeURIComponent(v.id)}`);
       }
     }
   }, [router]);

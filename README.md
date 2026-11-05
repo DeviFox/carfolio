@@ -1,55 +1,57 @@
 # carvisio 🚗
 
-**Визуальный гараж для тех, кто помнит, когда менял масло. И для тех, кто не помнит.**
+**English** · [Русский](README.ru.md)
 
-Carvisio помогает следить за состоянием автомобиля и хранить историю обслуживания в одном месте. Больше не нужно искать записи в заметках, вспоминать пробег последней замены или вести очередную таблицу в Excel.
+**A visual garage for people who remember when they last changed the oil. And for those who don't.**
 
-Добавь автомобиль, укажи установленные компоненты и следи за их состоянием, ресурсом и историей обслуживания.
+Carvisio helps you keep an eye on your car's condition and keeps its whole service history in one place. No more digging through notes, trying to recall the mileage at the last replacement, or starting yet another Excel spreadsheet.
+
+Add your car, list the components installed on it, and keep track of their condition, remaining life and service history.
 
 👉 **[carvisio.pro](https://carvisio.pro)**
 
 ![Carvisio](docs/screenshot.png)
 
-## Возможности
+## What it can do
 
-- **Визуальный гараж.** Автомобиль представлен в виде интерактивной изометрической схемы. Можно выбирать отдельные системы и переходить к их компонентам.
-- **Учёт компонентов.** Добавляй детали, расходники и другие элементы автомобиля, указывай пробег при установке и планируемый ресурс.
-- **Контроль ресурса.** Carvisio рассчитывает оставшийся ресурс по пробегу и времени. Это ориентир для планирования обслуживания, а не диагностика фактического износа.
-- **Ручная оценка состояния.** Можно отметить, что компонент требует внимания, даже если расчётный ресурс ещё не исчерпан.
-- **История обслуживания.** Замены, ремонты, осмотры и другие работы с датой, пробегом, стоимостью и заметками. При замене компонента предыдущая запись сохраняется.
-- **Несколько автомобилей.** Можно вести историю обслуживания всего гаража.
-- **Без обязательной регистрации.** Начать пользоваться можно сразу. Данные гостевого режима хранятся локально; после регистрации их можно перенести в аккаунт и синхронизировать между устройствами.
-- **Работа при нестабильном интернете.** Изменения сохраняются локально и синхронизируются с сервером при восстановлении соединения.
+- **A visual garage.** Your car is shown as an interactive isometric drawing. Pick a system and jump straight to its components.
+- **Component tracking.** Add parts, consumables and anything else on the car, along with the mileage it was installed at and how long it's expected to last.
+- **Remaining life.** Carvisio estimates how much life is left based on mileage and time. Treat it as a guide for planning maintenance, not a diagnosis of actual wear.
+- **Your own judgement counts.** You can flag a component as needing attention even if the math says it still has plenty of life left.
+- **Service history.** Replacements, repairs, inspections and other work, each with a date, mileage, cost and notes. When you replace something, the old record stays in the history.
+- **More than one car.** Keep the service history for your whole garage.
+- **No sign-up required.** You can start right away. In guest mode your data stays in the browser; once you register, you can move it to your account and sync it across devices.
+- **Works on a shaky connection.** Changes are saved locally and synced with the server once you're back online.
 
-## Технологии
+## Tech stack
 
-Проект состоит из двух частей:
+The project has two parts:
 
 **Frontend**
 - Next.js
 - React 19
 - TypeScript
 - Zustand
-- SVG для интерактивной иллюстрации автомобиля
+- SVG for the interactive car illustration
 
 **Backend**
 - Go
 - PostgreSQL
 - pgx
 
-Frontend собирается в статические файлы, а backend предоставляет API для работы с данными и аккаунтами.
+The frontend is built into static files, and the backend provides the API for data and accounts.
 
-## Локальный запуск
+## Running locally
 
-Понадобятся Node.js, Go 1.26+ и Docker.
+You'll need Node.js, Go 1.26+ and Docker.
 
-### 1. Запустить базу данных
+### 1. Start the database
 
 ```bash
 docker compose up -d
 ```
 
-### 2. Запустить API
+### 2. Start the API
 
 ```bash
 cd server
@@ -57,24 +59,24 @@ cp .env.example .env
 go run ./cmd/api
 ```
 
-### 3. Запустить frontend
+### 3. Start the frontend
 
-В другом терминале, из корня проекта:
+In another terminal, from the project root:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Приложение будет доступно по адресу [http://localhost:3017](http://localhost:3017).
+The app will be available at [http://localhost:3017](http://localhost:3017).
 
-Для быстрого знакомства с интерфейсом можно открыть демо-режим:
+For a quick look around, open the demo mode:
 
 [http://localhost:3017/?seed=demo](http://localhost:3017/?seed=demo)
 
-В локальном режиме письма, например для сброса пароля, выводятся в лог API, а не отправляются получателю.
+Locally, emails such as password resets aren't actually sent: they're printed to the API log instead.
 
-## Проверки
+## Checks
 
 ```bash
 npx eslint .
@@ -85,17 +87,17 @@ go vet ./...
 go test ./...
 ```
 
-## Структура проекта
+## Project structure
 
 ```text
-app/            Страницы приложения
-components/     UI-компоненты
-lib/            Состояние, API, синхронизация и расчёты
-lib/iso/        Геометрия и отрисовка автомобиля
-server/         Go API и миграции базы данных
-deploy/         Файлы для развёртывания
+app/            App pages
+components/     UI components
+lib/            State, API, sync and calculations
+lib/iso/        Car geometry and rendering
+server/         Go API and database migrations
+deploy/         Deployment files
 ```
 
 ---
 
-Carvisio — небольшой проект, который вырос из простой идеи: было бы удобно иметь всю историю обслуживания автомобиля под рукой, а не вспоминать её каждый раз заново. 🔧
+Carvisio is a small project that grew out of a simple idea: it would be handy to have a car's entire service history at your fingertips instead of trying to piece it together from memory every time. 🔧
