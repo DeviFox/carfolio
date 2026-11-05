@@ -6,10 +6,20 @@ import { GoogleTag } from "@/components/google-tag";
 import GarageSync from "@/components/garage-sync";
 import "./globals.css";
 
+const TITLE = "carvisio — учёт обслуживания автомобиля, запчастей и расходников";
+const DESCRIPTION =
+  "Ведите историю обслуживания автомобиля, учитывайте пробег, контролируйте ресурс деталей и получайте напоминания о замене расходников.";
+
 export const metadata: Metadata = {
-  title: "carvisio — состояние автомобиля под контролем",
-  description:
-    "История обслуживания и напоминания о регламенте для вашего автомобиля — на основе того, что знаете вы, не производитель.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: "carvisio",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
