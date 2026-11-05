@@ -1,8 +1,8 @@
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useState } from "react";
 import s from "./dialog.module.css";
 import { findActiveInstalledPart, formatDuration, formatKm } from "@/lib/compute";
 import { groupInt, groupMoney, groupedChange, intText } from "@/lib/number-input";
-import type { Condition, InstalledPart, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
+import type { Condition, InstalledPart, MaintenanceEvent, MaintenanceType } from "@/lib/types";
 
 type Field = "component" | "name" | "system" | "date" | "mileage" | "cost" | "lifeKm" | "lifeDays" | "notes";
 export type Errors = Partial<Record<Field, string>>;
@@ -129,16 +129,18 @@ export function DaysInput({
   const [unit, setUnit] = useState<TimeUnit>(() => splitDays(value).unit);
   const factor = TIME_UNITS.find((u) => u.value === unit)!.days;
 
-  // Follow outside changes (e.g. a component's previous life prefilled).
-  useEffect(() => {
+  // Follow outside changes (e.g. a component's previous life prefilled),
+  // but not our own echo: 2 years typed here comes back as 730 days.
+  const [seenValue, setSeenValue] = useState(value);
+  if (value !== seenValue) {
+    setSeenValue(value);
     const own = amount ? String(Number(amount) * factor) : "";
     if (value !== own) {
       const next = splitDays(value);
       setAmount(next.amount);
       setUnit(next.unit);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }
 
   function emit(nextAmount: string, nextUnit: TimeUnit) {
     const f = TIME_UNITS.find((u) => u.value === nextUnit)!.days;

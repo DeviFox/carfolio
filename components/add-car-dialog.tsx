@@ -81,22 +81,27 @@ export default function AddCarDialog({ open, onClose, onSaved, editVehicle, onDe
     closeRef.current = close;
   });
 
-  // sync fields from editVehicle whenever the dialog opens
-  useEffect(() => {
-    if (!open) return;
-    if (editVehicle) {
-      setMake(editVehicle.make);
-      setModel(editVehicle.model);
-      setYear(editVehicle.year ? String(editVehicle.year) : "");
-      setFuel(editVehicle.fuelType ?? "");
-      setEngine(editVehicle.engine ?? "");
-      setMileage(
-        intText(editVehicle.currentMileageKm),
-      );
-      setBodyType(editVehicle.bodyType ?? "");
+  // Sync fields from editVehicle whenever the dialog opens (or is handed
+  // another car while open). Done during render, not in an effect, so the
+  // first frame of the open dialog already shows the car's values.
+  const [synced, setSynced] = useState<{ open: boolean; editVehicle: typeof editVehicle }>(
+    { open: false, editVehicle: undefined },
+  );
+  if (synced.open !== open || (open && synced.editVehicle !== editVehicle)) {
+    setSynced({ open, editVehicle });
+    if (open) {
+      if (editVehicle) {
+        setMake(editVehicle.make);
+        setModel(editVehicle.model);
+        setYear(editVehicle.year ? String(editVehicle.year) : "");
+        setFuel(editVehicle.fuelType ?? "");
+        setEngine(editVehicle.engine ?? "");
+        setMileage(intText(editVehicle.currentMileageKm));
+        setBodyType(editVehicle.bodyType ?? "");
+      }
+      setErrors({});
     }
-    setErrors({});
-  }, [open, editVehicle]);
+  }
 
   useEffect(() => {
     if (!open) return;

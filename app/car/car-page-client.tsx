@@ -21,6 +21,7 @@ import {
 	SettingsIcon,
 } from "@/components/icons";
 import {useGarage} from "@/lib/store";
+import {useHydrated} from "@/lib/use-hydrated";
 import {
 	componentStatus,
 	computeResource,
@@ -39,7 +40,9 @@ export default function CarPageClient() {
 	const id           = searchParams.get("id") ?? "";
 
 	const router                        = useRouter();
-	const [hydrated, setHydrated]       = useState(false);
+	const hydrated                      = useHydrated();
+	// Captured once per visit: "mileage is stale" needs no live clock.
+	const [now]                         = useState(() => Date.now());
 	const [mileageOpen, setMileageOpen] = useState(false);
 	// null — closed; systemId — open with a new component in that system.
 	const [record, setRecord]           = useState<{
@@ -57,6 +60,7 @@ export default function CarPageClient() {
 	// Hovering or focusing a system row lights up its zone on the sticky car.
 	const [hoveredSystem, setHoveredSystem] = useState<SystemCategory | null>(null);
 	const [expanded, setExpanded]           = useState<Set<string>>(() => new Set());
+	const [expandedFor, setExpandedFor]     = useState<string | null>(null);
 	const [flashId, setFlashId]             = useState<string | null>(null);
 
 	const vehicle        = useGarage((s) => s.vehicles.find((v) => v.id === id));
@@ -71,25 +75,26 @@ export default function CarPageClient() {
 	const vehicleId      = vehicle?.id;
 
 	useEffect(() => {
-		setHydrated(true);
-	}, []);
-
-	useEffect(() => {
 		if (vehicleId) setLastViewed(vehicleId);
 	}, [vehicleId, setLastViewed]);
 
-	// Open systems are a per-viewer convenience, remembered per car.
-	useEffect(() => {
-		if (!vehicleId) return;
-		try {
-			const raw = localStorage.getItem(openKey(vehicleId));
-			setExpanded(new Set(raw ? (JSON.parse(raw) as string[]) : []));
-		} catch {
-			setExpanded(new Set());
-		}
-	}, [vehicleId]);
+	// Open systems are a per-viewer convenience, remembered per car: read
+	// them again whenever the page switches to another car.
+	if (hydrated && vehicleId && vehicleId !== expandedFor) {
+		setExpandedFor(vehicleId);
+		setExpanded(readOpen(vehicleId));
+	}
 
-	if (!hydrated || leaving) {
+	// The car was on screen and is gone: signed out (the account's garage
+	// leaves the browser), session expired, or deleted on another device.
+	// That's not a bad link, so go to the garage instead of "не найден".
+	// expandedFor is set the first time this car is shown.
+	const vanished = hydrated && !vehicle && id !== "" && expandedFor === id;
+	useEffect(() => {
+		if (vanished) router.replace("/");
+	}, [vanished, router]);
+
+	if (!hydrated || leaving || vanished) {
 		return <div className={shellStyles.shell} aria-busy="true"/>;
 	}
 
@@ -124,7 +129,7 @@ export default function CarPageClient() {
 	const mileageAt = mileageHistory
 		.filter((m) => m.vehicleId === vehicle.id)
 		.reduce<string>((latest, m) => (m.date > latest ? m.date : latest), vehicle.createdAt);
-	const mileageStale = Date.now() - new Date(mileageAt).getTime() > 30 * 24 * 60 * 60 * 1000;
+	const mileageStale = now - new Date(mileageAt).getTime() > 30 * 24 * 60 * 60 * 1000;
 
 	const vehicleEvents = sortEventsByDateDesc(
 		events.filter((e) => e.vehicleId === vehicle.id),
@@ -424,6 +429,15 @@ function digitGroups(n: number) {
 }
 
 const openKey = (vehicleId: string) => `carvisio.car.${vehicleId}.open`;
+
+function readOpen(vehicleId: string): Set<string> {
+	try {
+		const raw = localStorage.getItem(openKey(vehicleId));
+		return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+	} catch {
+		return new Set();
+	}
+}
 
 function ratioOf(row: ComponentRow): number {
 	return row.resource.kind === "known" ? row.resource.ratio : 1;

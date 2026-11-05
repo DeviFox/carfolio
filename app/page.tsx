@@ -11,6 +11,7 @@ import IntroCard, { introDismissed } from "@/components/intro-card";
 import { HelpIcon, PlusIcon } from "@/components/icons";
 import { useGarage } from "@/lib/store";
 import { useSync } from "@/lib/sync";
+import { useHydrated } from "@/lib/use-hydrated";
 import { formatKm, vehicleHealth } from "@/lib/compute";
 import StatusPill from "@/components/status-pill";
 import { SYSTEM_STATUS_TEXT } from "@/components/system-list";
@@ -18,7 +19,7 @@ import { SYSTEM_STATUS_TEXT } from "@/components/system-list";
 export default function Page() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useHydrated();
   // The story about how carvisio works, until the owner dismisses it.
   const [showIntro, setShowIntro] = useState(false);
   // Opened by itself (not from "?"): on close, focus goes to the next step, adding a car.
@@ -34,10 +35,13 @@ export default function Page() {
   const refused = useSync((s) => s.refused);
 
   useEffect(() => {
-    setHydrated(true);
     // Opens by itself once, for someone arriving to an empty garage.
     const auto = !introDismissed() && useGarage.getState().vehicles.length === 0;
     introAuto.current = auto;
+    // Mount-only read of browser state (localStorage, the URL), which the
+    // static server render can't see; it can't be a useState initializer
+    // without a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowIntro(auto);
     const params = new URLSearchParams(window.location.search);
     if (params.get("dialog") === "add") setOpen(true);
