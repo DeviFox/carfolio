@@ -15,14 +15,17 @@ type Props = {
   event: MaintenanceEvent;
   vehicle: Vehicle;
   onClose: () => void;
+  // Opens the full record form on this event to change its type or component;
+  // draft carries what was typed here so far, so switching loses nothing.
+  onChangeKind?: (draft: MaintenanceEvent) => void;
 };
 
 type Errors = Partial<Record<"date" | "mileage" | "cost" | "notes", string>>;
 
 
-// Edit or delete one recorded event. Type and component stay fixed: changing
-// them is a different record, so the owner deletes this one and adds another.
-export default function EventDialog({ event, vehicle, onClose }: Props) {
+// Edit or delete one recorded event. Type and component are changed in the
+// full record form (onChangeKind), which saves the result in this one's place.
+export default function EventDialog({ event, vehicle, onClose, onChangeKind }: Props) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -95,6 +98,24 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
 
   const effect = deleteEffect(event, installedParts);
 
+  // This record with the fields as typed now; unreadable numbers fall back to the saved ones.
+  function draft(): MaintenanceEvent {
+    const km = toNumber(mileage);
+    const money = toNumber(cost);
+    return {
+      ...event,
+      date: date || event.date,
+      mileageKm: !mileage.trim() ? undefined : Number.isFinite(km) && km >= 0 ? km : event.mileageKm,
+      costMinorUnits: !cost.trim()
+        ? undefined
+        : Number.isFinite(money) && money >= 0
+          ? Math.round(money * 100)
+          : event.costMinorUnits,
+      currency,
+      notes,
+    };
+  }
+
   return (
     <div className={`${s.overlay} ${stacked ? s.stacked : ""}`} onClick={overlayClick} role="presentation">
       <div
@@ -111,7 +132,11 @@ export default function EventDialog({ event, vehicle, onClose }: Props) {
               {EVENT_TYPE_LABEL[event.type]}
               {names ? `: ${names}` : ""}
             </h2>
-            <p className={s.subtitle}>Чтобы сменить тип или компонент, удалите запись и добавьте новую.</p>
+            {onChangeKind ? (
+              <button type="button" className={s.subtitleLink} onClick={() => onChangeKind(draft())}>
+                Изменить тип или компонент
+              </button>
+            ) : null}
           </div>
           <button type="button" className={s.close} onClick={requestClose} aria-label="Закрыть">
             <CloseIcon />

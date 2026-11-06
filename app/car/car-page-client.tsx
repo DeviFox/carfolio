@@ -18,7 +18,7 @@ import AddCarDialog from "@/components/add-car-dialog";
 import {
 	ArrowLeftIcon,
 	PlusIcon,
-	SettingsIcon,
+	PencilIcon,
 } from "@/components/icons";
 import {useGarage} from "@/lib/store";
 import {useHydrated} from "@/lib/use-hydrated";
@@ -50,6 +50,8 @@ export default function CarPageClient() {
 		componentId?: string;
 		type?: MaintenanceType;
 		template?: MaintenanceEvent;
+		// A recorded event whose type or component is being changed.
+		replacing?: MaintenanceEvent;
 	} | null>(null);
 	const [openComponentId, setOpenComponentId] = useState<string | null>(null);
 	const [editEventId, setEditEventId]         = useState<string | null>(null);
@@ -222,14 +224,6 @@ export default function CarPageClient() {
 					>
 						<ArrowLeftIcon/>
 					</button>
-					<button
-						type="button"
-						className={shellStyles.primaryBtn}
-						onClick={() => setRecord({})}
-						aria-label="Добавить запись"
-					>
-						<PlusIcon/>
-					</button>
 				</header>
 
 				<AppBar home onHelp={() => setHelpOpen(true)}/>
@@ -237,18 +231,20 @@ export default function CarPageClient() {
 				<main className={styles.main}>
 					<header className={styles.heroHead}>
 						<div>
-							<h1 className={styles.carName}>
-								{vehicle.name}
+							{/* The edit button sits beside the heading, not in it, so
+							    the heading's accessible name is just the car. */}
+							<div className={styles.carTitle}>
+								<h1 className={styles.carName}>{vehicle.name}</h1>
 								<button
 									type="button"
 									className={styles.editBtn}
 									onClick={() => setEditOpen(true)}
-									aria-label="Изменить параметры автомобиля"
-									title="Изменить параметры"
+									aria-label="Изменить данные автомобиля"
+									title="Изменить данные"
 								>
-									<SettingsIcon/>
+									<PencilIcon/>
 								</button>
-							</h1>
+							</div>
 							<p className={styles.carMeta}>
 								{[
 									vehicle.year,
@@ -368,6 +364,7 @@ export default function CarPageClient() {
 					</div>
 				</main>
 				<VersionTag/>
+				<div className={styles.ctaSpacer} aria-hidden="true"/>
 			</div>
 
 			{helpOpen ? <IntroCard onClose={() => setHelpOpen(false)}/> : null}
@@ -397,10 +394,21 @@ export default function CarPageClient() {
 					defaultComponentId={record.componentId}
 					defaultType={record.type}
 					template={record.template}
+					replacing={record.replacing}
 				/>
 			) : null}
 			{editEvent ? (
-				<EventDialog event={editEvent} vehicle={vehicle} onClose={() => setEditEventId(null)}/>
+				<EventDialog
+					event={editEvent}
+					vehicle={vehicle}
+					onClose={() => setEditEventId(null)}
+					onChangeKind={(draft) => {
+						setEditEventId(null);
+						// Next frame: once this dialog has left the modal stack, the
+						// form opens as a top-level dialog, not one stacked over it.
+						requestAnimationFrame(() => setRecord({replacing: draft}));
+					}}
+				/>
 			) : null}
 			<AddCarDialog
 				open={editOpen}

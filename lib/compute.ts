@@ -167,6 +167,9 @@ export function rollupStatus(labels: StatusLabel[]): StatusLabel {
 // need attention (worst first) and how many parts are tracked at all.
 export type VehicleHealth = {
   label: StatusLabel;
+  // The parts' own word for that state when they all agree ("Просрочено"),
+  // otherwise null and the card uses the generic word.
+  text: string | null;
   flagged: string[];
   known: number;
   total: number;
@@ -183,14 +186,18 @@ export function vehicleHealth(
     .filter((c) => c.vehicleId === vehicle.id && !c.isArchived)
     .map((c) => {
       const resource = computeResource(findActiveInstalledPart(c.id, installedParts), vehicle, nowDate);
-      return { name: c.name, label: componentStatus(resource, latestInspectionFor(c.id, inspections)).label };
+      const status = componentStatus(resource, latestInspectionFor(c.id, inspections));
+      return { name: c.name, label: status.label, text: status.text };
     });
+  const label = rollupStatus(rows.map((r) => r.label));
+  const texts = new Set(rows.filter((r) => r.label === label).map((r) => r.text));
   const flagged = rows
     .filter((r) => r.label === "critical" || r.label === "attention")
     .sort((a, b) => ROLLUP_ORDER[b.label] - ROLLUP_ORDER[a.label])
     .map((r) => r.name);
   return {
-    label: rollupStatus(rows.map((r) => r.label)),
+    label,
+    text: texts.size === 1 ? [...texts][0] : null,
     flagged,
     known: rows.filter((r) => r.label !== "unknown").length,
     total: rows.length,

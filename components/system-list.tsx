@@ -35,18 +35,34 @@ export const SYSTEM_STATUS_TEXT: Record<StatusLabel, string> = {
   unknown: "Нет данных",
 };
 
+// The system's pill speaks the same word as the parts behind it: when every
+// part at the system's state says it the same way ("Просрочено"), so does
+// the system. Mixed causes fall back to the generic word.
+function systemStatusText(label: StatusLabel, rows: ComponentRow[]): string {
+  const texts = new Set(rows.filter((r) => r.status.label === label).map((r) => r.status.text));
+  return texts.size === 1 ? [...texts][0] : SYSTEM_STATUS_TEXT[label];
+}
+
 // What a collapsed system says besides its count: problems first, then gaps.
 function countLine(rows: ComponentRow[]): string {
   if (rows.length === 0) return "нет компонентов";
   const n = (label: StatusLabel) => rows.filter((r) => r.status.label === label).length;
-  const critical = n("critical");
-  const attention = n("attention");
+  // Overdue by the forecast and critical by an inspection are different facts.
+  const overdue = rows.filter((r) => r.status.label === "critical" && r.status.reason === "computed").length;
+  const critical = n("critical") - overdue;
+  // Likewise "running low" by the forecast vs "needs attention" by an inspection.
+  const soon = rows.filter((r) => r.status.label === "attention" && r.status.reason === "computed").length;
+  const attention = n("attention") - soon;
   const unknown = n("unknown");
+  // A no-break space keeps each count with its word when the line wraps.
+  const nb = "\u00a0";
   return [
-    `${rows.length} ${plural(rows.length, "компонент", "компонента", "компонентов")}`,
-    critical ? `${critical} критично` : null,
-    attention ? `${attention} ${plural(attention, "требует", "требуют", "требуют")} внимания` : null,
-    unknown && unknown < rows.length ? `${unknown} без данных` : null,
+    `${rows.length}${nb}${plural(rows.length, "компонент", "компонента", "компонентов")}`,
+    overdue ? `${overdue}${nb}просрочено` : null,
+    critical ? `${critical}${nb}критично` : null,
+    soon ? `${soon}${nb}скоро замена` : null,
+    attention ? `${attention}${nb}${plural(attention, "требует", "требуют", "требуют")} внимания` : null,
+    unknown && unknown < rows.length ? `${unknown}${nb}без данных` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -101,7 +117,7 @@ export default function SystemList({
                   <span className={`${s.systemCount} numeric`}>{countLine(rows)}</span>
                 </span>
                 <span className={s.pillCell}>
-                  <StatusPill label={label} text={SYSTEM_STATUS_TEXT[label]} size="sm" />
+                  <StatusPill label={label} text={systemStatusText(label, rows)} size="sm" />
                 </span>
                 <ChevronDownIcon className={s.chevron} />
               </button>
@@ -171,8 +187,10 @@ function ComponentLine({
         {installed ? <div className={`${s.compMeta} numeric`}>{installed}</div> : null}
       </div>
       <div className={s.resource}>
-        <div className={s.resourceBar} aria-hidden="true">
-          {resource.kind === "known" ? (
+        {/* Past the life the bar is not empty (that's "no data") but used up
+            and then some: a full hatched danger track, and no "0%". */}
+        <div className={`${s.resourceBar} ${over ? s.resourceOver : ""}`} aria-hidden="true">
+          {resource.kind === "known" && !over ? (
             <div
               className={`${s.resourceFill} ${s[`rf-${status.label}`]}`}
               style={{ width: `${Math.round(resource.ratio * 100)}%` }}
@@ -180,7 +198,7 @@ function ComponentLine({
           ) : null}
         </div>
         <div className={`${s.resourceText} numeric`}>
-          {resource.kind === "known" ? (
+          {resource.kind === "known" && !over ? (
             <span className={`${s.resourcePct} mono`}>{formatRatioPercent(resource.ratio)}</span>
           ) : null}
           <span className={over ? s.metaOver : undefined}>{summary}</span>

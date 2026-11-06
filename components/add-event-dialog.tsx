@@ -5,12 +5,12 @@ import s from "./dialog.module.css";
 import { CloseIcon } from "./icons";
 import { useConfirmClose, useModal } from "@/lib/use-modal";
 import { useGarage } from "@/lib/store";
-import { componentLabel, findActiveInstalledPart, findComponentByName, formatKm } from "@/lib/compute";
+import { EVENT_TYPE_LABEL, componentLabel, findActiveInstalledPart, findComponentByName, formatKm } from "@/lib/compute";
 import { sortComponentsByName, systemForCategory, type ComponentPosition } from "@/lib/compute";
 import { groupInt, groupedChange, intText } from "@/lib/number-input";
 import { FLUIDS, POSITIONED_CATEGORIES } from "@/lib/types";
 import { PositionPicker } from "./position-picker";
-import type { Condition, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
+import type { Condition, InstalledPart, MaintenanceEvent, MaintenanceType, Vehicle } from "@/lib/types";
 
 type Props = {
   open: boolean;
@@ -21,6 +21,9 @@ type Props = {
   defaultType?: MaintenanceType;
   // Previous record to copy cost, currency and notes from; date and mileage stay today's.
   template?: MaintenanceEvent;
+  // A recorded event whose type or component is being changed: every field
+  // starts from it, and saving puts the new record in its place.
+  replacing?: MaintenanceEvent;
 };
 
 import {
@@ -44,7 +47,7 @@ import {
   toNumber,
   today,
 } from "./add-event-parts";
-import { installsPart } from "@/lib/records";
+import { deleteEffect, installsPart } from "@/lib/records";
 
 export default function AddEventDialog({
   open,
@@ -54,6 +57,7 @@ export default function AddEventDialog({
   defaultComponentId,
   defaultType = "replacement",
   template,
+  replacing,
 }: Props) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -63,8 +67,16 @@ export default function AddEventDialog({
   const systems = useGarage((st) => st.systems);
   const components = useGarage((st) => st.components);
   const installedParts = useGarage((st) => st.installedParts);
-  const events = useGarage((st) => st.events);
+  const allEvents = useGarage((st) => st.events);
+  const inspections = useGarage((st) => st.inspections);
+  // The record being replaced doesn't count against itself ("уже есть").
+  const events = useMemo(
+    () => (replacing ? allEvents.filter((e) => e.id !== replacing.id) : allEvents),
+    [allEvents, replacing],
+  );
   const addRecord = useGarage((st) => st.addRecord);
+  const deleteEvent = useGarage((st) => st.deleteEvent);
+  const startComponentId = replacing?.componentIds[0] ?? defaultComponentId;
 
   const vehicleSystems = useMemo(
     () => systems.filter((x) => x.vehicleId === vehicle.id && !x.isArchived).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -75,24 +87,34 @@ export default function AddEventDialog({
     [components, vehicle.id],
   );
 
-  const [type, setType] = useState<MaintenanceType>(defaultType);
+  const [type, setType] = useState<MaintenanceType>(replacing?.type ?? defaultType);
   const [pick, setPick] = useState(
-    defaultComponentId ?? (defaultSystemId || vehicleComponents.length === 0 ? NEW : ""),
+    startComponentId ?? (defaultSystemId || vehicleComponents.length === 0 ? NEW : ""),
   );
   const [name, setName] = useState("");
   const [systemId, setSystemId] = useState(defaultSystemId ?? vehicleSystems[0]?.id ?? "");
   const [position, setPosition] = useState<ComponentPosition>({});
-  const [date, setDate] = useState(today());
-  const [mileage, setMileage] = useState(intText(vehicle.currentMileageKm));
+  const [date, setDate] = useState(replacing ? replacing.date.slice(0, 10) : today());
+  const [mileage, setMileage] = useState(intText(replacing ? replacing.mileageKm : vehicle.currentMileageKm));
   const templateCost = minorToText(template?.costMinorUnits);
   const templateNotes = template?.notes ?? "";
-  const [cost, setCost] = useState(templateCost);
-  const [currency, setCurrency] = useState(template?.currency ?? "RUB");
+  const [cost, setCost] = useState(replacing ? minorToText(replacing.costMinorUnits) : templateCost);
+  const [currency, setCurrency] = useState((replacing ?? template)?.currency ?? "RUB");
   const [track, setTrack] = useState<boolean | null>(null);
-  const [lifeKm, setLifeKm] = useState(() => lifeOf(defaultComponentId, installedParts, "expectedLifeKm"));
-  const [lifeDays, setLifeDays] = useState(() => lifeOf(defaultComponentId, installedParts, "expectedLifeDays"));
-  const [condition, setCondition] = useState<Condition | "">("");
-  const [notes, setNotes] = useState(templateNotes);
+  const [lifeKm, setLifeKm] = useState(() => lifeOf(startComponentId, installedParts, "expectedLifeKm"));
+  const [lifeDays, setLifeDays] = useState(() => lifeOf(startComponentId, installedParts, "expectedLifeDays"));
+  // An inspection being replaced keeps its verdict, found the way deleteEvent finds it.
+  const [condition, setCondition] = useState<Condition | "">(() => {
+    if (replacing?.type !== "inspection") return "";
+    const found = inspections.find(
+      (i) =>
+        replacing.componentIds.includes(i.componentId) &&
+        i.date === replacing.date &&
+        i.mileageKm === replacing.mileageKm,
+    );
+    return found?.condition ?? "";
+  });
+  const [notes, setNotes] = useState(replacing ? (replacing.notes ?? "") : templateNotes);
   // Repeat mode hides the settled fields (type, component, resource) until asked.
   const [expanded, setExpanded] = useState(!template);
   const [errors, setErrors] = useState<Errors>({});
@@ -216,6 +238,11 @@ export default function AddEventDialog({
     submittingRef.current = true;
     setSubmitting(true);
     const costMinor = cost.trim() ? Math.round(toNumber(cost) * 100) : undefined;
+    // Replacing: the old record goes first (undoing what it did to the parts),
+    // then the new one is added. If the new one is refused, the garage is put
+    // back exactly as it was, so a failed save never loses the old record.
+    const before = replacing ? useGarage.getState() : undefined;
+    if (replacing) deleteEvent(replacing.id);
     const result = addRecord({
       vehicleId: vehicle.id,
       type,
@@ -239,6 +266,10 @@ export default function AddEventDialog({
       condition: type === "inspection" && condition ? condition : undefined,
     });
     if (!result.ok) {
+      if (before) {
+        const { vehicles, systems, components, installedParts, events, mileageHistory, inspections, reminders } = before;
+        useGarage.setState({ vehicles, systems, components, installedParts, events, mileageHistory, inspections, reminders });
+      }
       setFormError(result.error);
       submittingRef.current = false;
       setSubmitting(false);
@@ -261,12 +292,18 @@ export default function AddEventDialog({
         <div className={s.header}>
           <div className={s.titleGroup}>
             <h2 className={s.title} id={titleId}>
-              {repeat && selected ? `Замена: ${componentLabel(selected)}` : "Добавить запись"}
+              {replacing
+                ? "Изменить запись"
+                : repeat && selected
+                  ? `Замена: ${componentLabel(selected)}`
+                  : "Добавить запись"}
             </h2>
             <p className={s.subtitle} id={`${titleId}-sub`}>
-              {repeat && template
-                ? `Прошлая замена — ${formatLongDate(template.date)}`
-                : "Что сделали с автомобилем?"}
+              {replacing
+                ? replacedLine(replacing, installs, installedParts)
+                : repeat && template
+                  ? `Прошлая замена — ${formatLongDate(template.date)}`
+                  : "Что сделали с автомобилем?"}
             </p>
           </div>
           <button type="button" className={s.close} onClick={requestClose} aria-label="Закрыть">
@@ -494,4 +531,12 @@ export default function AddEventDialog({
       </div>
     </div>
   );
+}
+
+// What saving does to the record being changed. When the new record no longer
+// installs a part, the old one's effect on the parts is spelled out, as on delete.
+function replacedLine(event: MaintenanceEvent, installs: boolean, parts: InstalledPart[]): string {
+  const base = `Вместо записи «${EVENT_TYPE_LABEL[event.type]}» от ${formatLongDate(event.date)} сохранится эта.`;
+  const effect = installs ? null : deleteEffect(event, parts);
+  return effect ? `${base} ${effect}` : base;
 }

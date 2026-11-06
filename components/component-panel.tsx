@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import d from "./dialog.module.css";
 import s from "./component-panel.module.css";
 import StatusPill from "./status-pill";
-import { CloseIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
+import { CloseIcon, PencilIcon, PlusIcon } from "./icons";
 import { DaysInput } from "./add-event-parts";
 import { ComponentPositionField } from "./position-picker";
 import { useModal } from "@/lib/use-modal";
@@ -99,21 +99,29 @@ export default function ComponentPanel({
           <div className={s.statusRow}>
             <StatusPill label={status.label} text={status.text} />
             {resource.kind === "known" ? (
-              <span className={`${s.summary} numeric`}>{resourceSummary(resource)}</span>
+              <span className={`${s.summary} ${resource.overdue ? s.summaryOver : ""} numeric`}>
+                {resourceSummary(resource)}
+              </span>
             ) : null}
           </div>
 
           {resource.kind === "known" ? (
             <>
-              <div className={s.meter}>
-                <span className={`${s.pct} mono numeric`}>{formatRatioPercent(resource.ratio)}</span>
-                <div className={s.bar} aria-hidden="true">
-                  <div
-                    className={`${s.fill} ${s[`fill-${status.label}`]}`}
-                    style={{ width: `${Math.round(resource.ratio * 100)}%` }}
-                  />
+              {/* Past the life: the overrun above already says how far; the
+                  bar is the whole track, hatched, and there is no "0%". */}
+              {resource.overdue ? (
+                <div className={`${s.bar} ${s.barOver}`} aria-hidden="true" />
+              ) : (
+                <div className={s.meter}>
+                  <span className={`${s.pct} mono numeric`}>{formatRatioPercent(resource.ratio)}</span>
+                  <div className={s.bar} aria-hidden="true">
+                    <div
+                      className={`${s.fill} ${s[`fill-${status.label}`]}`}
+                      style={{ width: `${Math.round(resource.ratio * 100)}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <p className={s.hint}>Прогноз по пробегу и времени с установки, а не замер износа.</p>
             </>
           ) : (
@@ -231,6 +239,14 @@ export default function ComponentPanel({
           )}
         </section>
 
+        {/* Removing a part is rare and final: a quiet link at the end of the
+            sheet, away from the thumb's path to the primary actions below. */}
+        {confirmingDelete ? null : (
+          <button type="button" className={d.deleteLink} onClick={() => setConfirmingDelete(true)}>
+            Удалить деталь
+          </button>
+        )}
+
         <footer className={s.footer}>
           {confirmingDelete ? (
             <div
@@ -266,15 +282,6 @@ export default function ComponentPanel({
             </div>
           ) : (
             <>
-              <button
-                type="button"
-                className={`${d.close} ${s.trash}`}
-                onClick={() => setConfirmingDelete(true)}
-                aria-label="Удалить деталь"
-                title="Удалить деталь"
-              >
-                <TrashIcon />
-              </button>
               <div className={s.footerActions}>
                 {lastReplacement ? (
                   <button

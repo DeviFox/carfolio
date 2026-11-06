@@ -232,6 +232,18 @@
   transition: color 120ms ease;
 }
 .deleteLink:hover { color: var(--danger-ink); }
+
+/* A quiet action under a dialog title ("Изменить тип или компонент"). */
+.subtitleLink {
+  align-self: flex-start;
+  padding: 2px 0;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+.subtitleLink:hover { text-decoration: underline; }
+.subtitleLink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
 .deleteLink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
 
 .deleteConfirm {
@@ -347,4 +359,17 @@
 /* Reduced motion: dialogs still fade in, so arrival reads, but don't travel or scale. */
 @media (prefers-reduced-motion: reduce) {
   .dialog { animation-name: overlayIn; }
+}
+
+/* Touch: the quiet text links keep their look but get a finger-sized hit
+   area (44px tall) without moving anything around them. */
+@media (pointer: coarse) {
+  .deleteLink, .subtitleLink { position: relative; }
+  .deleteLink::after, .subtitleLink::after {
+    content: "";
+    position: absolute;
+    inset: 50% -8px auto;
+    height: 44px;
+    transform: translateY(-50%);
+  }
 }

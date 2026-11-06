@@ -10,6 +10,8 @@ import {
   type CarPart,
   type Zone,
 } from "@/lib/iso/car";
+import type { Flat } from "@/lib/iso/iso-kit";
+import { RASTER_CARS, type RasterCar, type RasterZone } from "@/lib/iso/raster-cars";
 import type { BodyType, SystemCategory } from "@/lib/types";
 
 type ZoneState = "ok" | "attention" | "critical" | "unknown";
@@ -33,13 +35,6 @@ const ZONE_LABEL: Partial<Record<SystemCategory, string>> = {
   other: "Прочее",
 };
 
-const STATE_TEXT: Record<ZoneState, string> = {
-  ok: "в норме",
-  attention: "требует внимания",
-  critical: "критично",
-  unknown: "нет данных",
-};
-
 // Room kept around the drawn car for the hover label and the badge halos.
 const CROP_PAD = 22;
 
@@ -54,7 +49,116 @@ const FILL_CLASS: Record<string, string> = {
   "lit-top": styles.fillLitTop,
 };
 
-export default function CarIllustration({
+// Pointer wiring shared by the vector and the picture zones. The zones are a
+// shortcut for the mouse and the finger only: keyboard and screen-reader users
+// reach every system, with its state, through the ledger and the chips under
+// the car, so the zones don't add a second tab stop per system.
+function useZoneHandlers(onZoneClick: Props["onZoneClick"]) {
+  const [hovered, setHovered] = useState<SystemCategory | null>(null);
+  const handlersFor = (id: SystemCategory) =>
+    onZoneClick
+      ? {
+          onClick: () => onZoneClick(id),
+          onMouseEnter: () => setHovered(id),
+          onMouseLeave: () => setHovered((h) => (h === id ? null : h)),
+        }
+      : {};
+  return { hovered, handlersFor };
+}
+
+export default function CarIllustration(props: Props) {
+  const raster = props.bodyType ? RASTER_CARS[props.bodyType] : undefined;
+  return raster ? <RasterCarIllustration {...props} raster={raster} /> : <VectorCarIllustration {...props} />;
+}
+
+// A body type with a picture: the picture is an <img>, the zones are an SVG
+// in the picture's own pixels, and the dots and the label are HTML on top,
+// placed in percent. They keep their real size and shape at any width,
+// where SVG text and circles would be stretched with the picture.
+function RasterCarIllustration({
+  raster,
+  activeZone = null,
+  zoneStates = {},
+  availableZones,
+  onZoneClick,
+}: Props & { raster: RasterCar }) {
+  const titleId = useId();
+  const { hovered, handlersFor } = useZoneHandlers(onZoneClick);
+  const { crop } = raster;
+  const at = ([x, y]: Flat) => ({
+    left: `${((x - crop.x) / crop.w) * 100}%`,
+    top: `${((y - crop.y) / crop.h) * 100}%`,
+  });
+  const zones = (Object.entries(raster.zones) as Array<[Zone, RasterZone]>).filter(
+    ([id]) => !availableZones || availableZones.includes(id),
+  );
+  const shown = hovered ?? activeZone;
+  const label = shown && shown !== "other" ? raster.zones[shown as Zone] : undefined;
+
+  return (
+    <div
+      className={`iso ${styles.raster}`}
+      data-theme="light"
+      style={{ "--car-ratio": `${crop.w} / ${crop.h}`, "--car-aspect": crop.w / crop.h } as React.CSSProperties}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+      <img
+        className={styles.picture}
+        src={raster.src}
+        alt=""
+        decoding="async"
+        style={{
+          width: `${(raster.width / crop.w) * 100}%`,
+          left: `${(-crop.x / crop.w) * 100}%`,
+          top: `${(-crop.y / crop.h) * 100}%`,
+        }}
+      />
+      <svg
+        className={styles.rasterZones}
+        viewBox={`${crop.x} ${crop.y} ${crop.w} ${crop.h}`}
+        role="img"
+        aria-labelledby={titleId}
+        focusable="false"
+      >
+        <title id={titleId}>Ваш автомобиль</title>
+        <g className={styles.zones} aria-hidden="true">
+          {zones.map(([id, zone]) => (
+            <path
+              key={id}
+              d={zone.polygons.map((poly) => polyPathOf(poly)).join(" ")}
+              vectorEffect="non-scaling-stroke"
+              className={[
+                styles.zone,
+                hovered === id ? styles.zoneHover : "",
+                activeZone === id ? styles.zoneActive : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              {...handlersFor(id)}
+            />
+          ))}
+        </g>
+      </svg>
+
+      <div className={styles.overlay} aria-hidden="true">
+        {zones.flatMap(([id, zone]) => {
+          const state = zoneStates[id];
+          if (state !== "attention" && state !== "critical") return [];
+          return zone.badges.map((p, i) => (
+            <span key={`${id}-${i}`} className={`${styles.dot} ${styles[`dot-${state}`]}`} style={at(p)} />
+          ));
+        })}
+        {label && shown ? (
+          <span className={`${styles.chip} ${label.labelAbove ? styles.chipAbove : ""}`} style={at(label.anchor)}>
+            {ZONE_LABEL[shown]}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function VectorCarIllustration({
   bodyType,
   activeZone = null,
   zoneStates = {},
@@ -62,7 +166,7 @@ export default function CarIllustration({
   onZoneClick,
 }: Props) {
   const titleId = useId();
-  const [hovered, setHovered] = useState<SystemCategory | null>(null);
+  const { hovered, handlersFor } = useZoneHandlers(onZoneClick);
   const car = useMemo(() => buildCar(bodyType), [bodyType]);
   // The silhouettes are drawn on a shared canvas with generous margins; crop
   // the view to the car so it fills its column instead of floating in white.
@@ -83,7 +187,7 @@ export default function CarIllustration({
       <svg
         className={`iso-svg ${styles.svg}`}
         viewBox={viewBox}
-        role="group"
+        role="img"
         aria-labelledby={titleId}
         focusable="false"
       >
@@ -98,7 +202,7 @@ export default function CarIllustration({
         </g>
 
         {/* Clickable zones (invisible until hover) */}
-        <g className={styles.zones}>
+        <g className={styles.zones} aria-hidden="true">
           {(Object.entries(car.zones) as Array<[Zone, (typeof car.zones)[Zone]]>).map(([id, hint]) => {
             if (!hint) return null;
             const available = !availableZones || availableZones.includes(id);
@@ -112,24 +216,7 @@ export default function CarIllustration({
             ]
               .filter(Boolean)
               .join(" ");
-            const handlers = onZoneClick
-              ? {
-                  onClick: () => onZoneClick(id),
-                  onMouseEnter: () => setHovered(id),
-                  onMouseLeave: () => setHovered((h) => (h === id ? null : h)),
-                  onFocus: () => setHovered(id),
-                  onBlur: () => setHovered((h) => (h === id ? null : h)),
-                  onKeyDown: (e: React.KeyboardEvent) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onZoneClick(id);
-                    }
-                  },
-                  role: "button",
-                  tabIndex: 0,
-                  "aria-label": `${ZONE_LABEL[id]}: ${STATE_TEXT[zoneStates[id] ?? "unknown"]}`,
-                }
-              : {};
+            const handlers = handlersFor(id);
             const d = hint.polygons.map((poly) => polyPathOf(poly)).join(" ");
             return (
               <path

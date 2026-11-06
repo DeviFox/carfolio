@@ -94,18 +94,23 @@ export default function Page() {
           name: "Масло двигателя",
           kind: "consumable",
         });
+        // A believable first look: the oil was changed five months and
+        // 8 500 km ago, so the demo opens on "Скоро замена", not a crisis.
+        const changed = new Date();
+        changed.setMonth(changed.getMonth() - 5);
+        const changedOn = changed.toISOString().slice(0, 10);
         const part = g.addInstalledPart({
           componentId: comp.id,
-          installedAtMileageKm: 76000,
-          installedAtDate: "2024-10-12",
+          installedAtMileageKm: 169930,
+          installedAtDate: changedOn,
           expectedLifeKm: 10000,
           notes: "5W-30, фильтр заменён вместе",
         });
         g.addEvent({
           vehicleId: v.id,
           type: "replacement",
-          date: "2024-10-12",
-          mileageKm: 76000,
+          date: changedOn,
+          mileageKm: 169930,
           componentIds: [comp.id],
           installedPartId: part.id,
           costMinorUnits: 650000,
@@ -201,7 +206,7 @@ export default function Page() {
                           </div>
                           {/* The car's state, not its bookkeeping: worst status, then what it is about. */}
                           <div className={styles.carCardFooter}>
-                            <StatusPill label={health.label} text={SYSTEM_STATUS_TEXT[health.label]} size="sm" />
+                            <StatusPill label={health.label} text={health.text ?? SYSTEM_STATUS_TEXT[health.label]} size="sm" />
                             <span className={styles.carHealth}>
                               {health.flagged.length > 0
                                 ? health.flagged.join(", ")

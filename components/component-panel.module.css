@@ -92,6 +92,8 @@
 
 .statusRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .summary { font-size: var(--fs-sm); color: var(--body); }
+/* The overrun reads in the same danger ink as in the ledger row. */
+.summaryOver { color: var(--danger-ink); font-weight: 500; }
 
 .meter { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; }
 .pct { font-size: var(--fs-xl); font-weight: 700; color: var(--ink); letter-spacing: -0.02em; line-height: 1; }
@@ -100,6 +102,13 @@
   background: color-mix(in srgb, var(--line) 60%, transparent);
   border-radius: var(--r-pill);
   overflow: hidden;
+}
+.barOver {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--danger) 0 4px,
+    color-mix(in srgb, var(--danger) 45%, var(--card)) 4px 8px
+  );
 }
 .fill { height: 100%; border-radius: var(--r-pill); }
 .fill-ok { background: var(--ok); }
@@ -171,25 +180,11 @@
   background: var(--card-raised);
   border-top: 1px solid var(--line);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
 }
-/* Delete stays quiet on the left; the record actions keep the right side. */
-/* Trash joins the button row with the same 8px rhythm; its own outline sets it
-   apart from the record actions, and it turns red only on hover. */
-.footer .trash {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--line);
-  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
-}
-.footer .trash:hover {
-  color: var(--danger-ink);
-  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
-  background: color-mix(in srgb, var(--danger) 6%, transparent);
-}
-.footer:has(.trash) { justify-content: flex-end; gap: 8px; }
+/* Only the record actions live here; delete is a link at the end of the sheet. */
 .footerActions { display: flex; align-items: center; gap: 8px; }
 .footerActions > button { white-space: nowrap; }
 .footerActions > button:not(:last-child) { padding-inline: 12px; }
@@ -206,7 +201,8 @@
     animation-name: sheetIn;
   }
   @keyframes sheetIn { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
-  .footer { bottom: -20px; margin-bottom: -20px; padding-bottom: 20px; }
+  /* Clear of the home indicator on phones that have one. */
+  .footer { bottom: -20px; margin-bottom: -20px; padding-bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px)); }
   .footerActions { flex: 1; }
   .footerActions > button { flex: 1; justify-content: center; padding-inline: 10px; }
 }
